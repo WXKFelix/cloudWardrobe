@@ -24,11 +24,22 @@ console.log('');
 const nodeMajor = parseInt(process.version.slice(1).split('.')[0], 10);
 console.log(`  Node 版本: ${process.version}`);
 if (nodeMajor >= 23) {
-  console.log('');
-  console.log('  ⚠️  警告: Node 24+ 不受 Expo 支持，Metro 极易卡死！');
-  console.log('  请安装 Node 20 LTS: https://nodejs.org/en/download');
-  console.log('  或使用 nvm-windows: nvm install 20 && nvm use 20');
-  console.log('');
+  console.error('');
+  console.error(`  ❌ Node ${process.version} 不受 Expo SDK 52 支持（需 18–22）`);
+  console.error('  Metro 会卡在 "Starting Metro Bundler"，无法打开网页。');
+  console.error('');
+  console.error('  修复（nvm-windows，以管理员身份打开终端）：');
+  console.error('    nvm install 20.18.0');
+  console.error('    nvm use 20.18.0');
+  console.error('    node -v          # 应显示 v20.x，不是 v24.14.0');
+  console.error('    rmdir /s /q node_modules');
+  console.error('    del package-lock.json');
+  console.error('    npm install');
+  console.error('    npm run web:clear');
+  console.error('');
+  console.error('  无 nvm 时直接安装: https://nodejs.org/en/download (选 20 LTS)');
+  console.error('');
+  process.exit(1);
 }
 console.log(`  项目路径: ${projectRoot}`);
 console.log('');
