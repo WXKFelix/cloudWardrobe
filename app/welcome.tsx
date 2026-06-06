@@ -1,4 +1,4 @@
-import { StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { CloudWardrobeLogo } from '@/components/CloudWardrobeLogo';
 import { ScreenContainer } from '@/components/ScreenContainer';
@@ -8,14 +8,17 @@ import { colors, radius, spacing, typography } from '@/constants/theme';
 
 export default function WelcomeScreen() {
   const router = useRouter();
+  const { height } = useWindowDimensions();
+  const logoSize = height < 740 ? 158 : 180;
+  const logoStageMinWidth = height < 740 ? 220 : 260;
 
   return (
-    <ScreenContainer scroll={false} style={styles.container}>
+    <ScreenContainer style={styles.container}>
       <View style={styles.hero}>
-        <View style={styles.logoStage}>
+        <View style={[styles.logoStage, { minWidth: logoStageMinWidth }]}>
           <View style={styles.logoCornerTL} />
           <View style={styles.logoCornerBR} />
-          <CloudWardrobeLogo size={188} />
+          <CloudWardrobeLogo size={logoSize} />
         </View>
 
         <Text style={styles.ecoTag}>{brand.ecoTagline}</Text>
@@ -49,25 +52,22 @@ export default function WelcomeScreen() {
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
-    justifyContent: 'space-between',
-    paddingTop: spacing.lg,
-    paddingBottom: spacing.xl,
+    paddingTop: spacing.md,
+    gap: spacing.md,
   },
   hero: { alignItems: 'center', gap: spacing.xs },
   logoStage: {
     position: 'relative',
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: spacing.sm,
-    paddingVertical: spacing.lg,
-    paddingHorizontal: spacing.xl,
+    marginBottom: spacing.xs,
+    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.lg,
     backgroundColor: 'rgba(255, 255, 255, 0.72)',
     borderRadius: radius.xl,
     borderWidth: 1,
     borderColor: 'rgba(0, 217, 181, 0.28)',
     overflow: 'hidden',
-    minWidth: 260,
   },
   logoCornerTL: {
     position: 'absolute',
@@ -105,7 +105,13 @@ const styles = StyleSheet.create({
     letterSpacing: 1,
     marginTop: spacing.xs,
   },
-  brand: { ...typography.hero, color: colors.primary, marginTop: spacing.sm },
+  brand: {
+    ...typography.hero,
+    color: colors.primary,
+    marginTop: spacing.sm,
+    fontSize: 28,
+    lineHeight: 36,
+  },
   slogan: { ...typography.subtitle, color: colors.text, marginTop: spacing.xs },
   sloganSub: { ...typography.body, color: colors.tech, fontWeight: '600' },
   mission: {
@@ -116,7 +122,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.lg,
     lineHeight: 20,
   },
-  features: { gap: spacing.sm, marginVertical: spacing.md },
+  features: { gap: spacing.sm },
   featureRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -139,5 +145,5 @@ const styles = StyleSheet.create({
   featureTextWrap: { flex: 1 },
   featureTitle: { ...typography.label, color: colors.text },
   featureText: { ...typography.caption, color: colors.textSecondary, marginTop: 2 },
-  actions: { gap: spacing.md },
+  actions: { gap: spacing.md, marginTop: spacing.sm },
 });

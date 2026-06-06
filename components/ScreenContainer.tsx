@@ -1,5 +1,5 @@
 import { ScrollView, StyleSheet, View, ViewStyle } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { EcoBackground } from '@/components/EcoBackground';
 import { colors, spacing } from '@/constants/theme';
 
@@ -16,14 +16,25 @@ export function ScreenContainer({
   style,
   padded = true,
 }: ScreenContainerProps) {
+  const insets = useSafeAreaInsets();
+  const bottomPad = spacing.xxl + insets.bottom;
+
   const content = (
-    <View style={[padded && styles.padded, style]}>{children}</View>
+    <View style={[padded && styles.padded, { paddingBottom: bottomPad }, style]}>
+      {children}
+    </View>
   );
 
   const body = scroll ? (
     <ScrollView
-      contentContainerStyle={[styles.scroll, padded && styles.padded, style]}
+      contentContainerStyle={[
+        styles.scroll,
+        padded && styles.padded,
+        { paddingBottom: bottomPad },
+        style,
+      ]}
       showsVerticalScrollIndicator={false}
+      bounces
     >
       {children}
     </ScrollView>
@@ -32,7 +43,7 @@ export function ScreenContainer({
   );
 
   return (
-    <SafeAreaView style={styles.safe} edges={['top']}>
+    <SafeAreaView style={styles.safe} edges={['top', 'bottom']}>
       <EcoBackground />
       {body}
     </SafeAreaView>
@@ -41,6 +52,6 @@ export function ScreenContainer({
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: colors.background },
-  scroll: { flexGrow: 1, paddingBottom: spacing.xxl },
+  scroll: { flexGrow: 1 },
   padded: { paddingHorizontal: spacing.md },
 });
