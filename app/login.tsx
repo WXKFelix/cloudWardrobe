@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Pressable, StyleSheet, Text } from 'react-native';
 import { useRouter } from 'expo-router';
+import { BackButton } from '@/components/BackButton';
 import { ScreenContainer } from '@/components/ScreenContainer';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
@@ -33,9 +34,7 @@ export default function LoginScreen() {
 
   return (
     <ScreenContainer>
-      <Pressable onPress={() => router.back()} style={styles.back}>
-        <Text style={styles.backText}>← 返回</Text>
-      </Pressable>
+      <BackButton onPress={() => router.back()} style={styles.back} />
 
       <Text style={styles.title}>欢迎回来</Text>
       <Text style={styles.subtitle}>登录你的云衣柜账号</Text>
@@ -75,7 +74,6 @@ export default function LoginScreen() {
 
 const styles = StyleSheet.create({
   back: { marginBottom: spacing.lg },
-  backText: { ...typography.body, color: colors.primary },
   title: { ...typography.title, color: colors.text, marginBottom: spacing.xs },
   subtitle: { ...typography.body, color: colors.textSecondary, marginBottom: spacing.xl },
   error: { ...typography.caption, color: colors.error, marginTop: spacing.sm },
