@@ -50,29 +50,47 @@ Logs for your project will appear below.
 | v18 / v22 | ⚠️ 可用，建议换 20 |
 | **v23 / v24** | ❌ **Expo 不支持，Metro 会卡在 Starting Metro Bundler** |
 
-### Windows 切换 Node 版本（nvm-windows）
+### Windows：没有 nvm？直接安装 Node 20（推荐）
+
+你看到的 `nvm : The term 'nvm' is not recognized` 说明 **本机未安装 nvm**，不必装 nvm，按下面做即可：
+
+1. **卸载 Node 24**（若已安装）  
+   `设置` → `应用` → 搜索 **Node.js** → 卸载
+
+2. **下载 Node 20 LTS 安装包**  
+   https://nodejs.org/en/download/prebuilt-installer  
+   - Version: **20.x LTS**  
+   - Platform: **Windows**  
+   - 下载 `.msi` 并一路下一步安装
+
+3. **关闭所有 PowerShell / 终端窗口，重新打开一个新窗口**
+
+4. **确认版本**（必须是 v20，不能仍是 v24.14.0）：
 
 ```powershell
-# 1. 安装 nvm-windows（若未安装）
-# 下载: https://github.com/coreybutler/nvm-windows/releases
-
-# 2. 安装并启用 Node 20
-nvm install 20
-nvm use 20
-
-# 3. 确认版本
 node -v
 # 应显示 v20.x.x
+```
 
-# 4. 回到项目重新安装依赖
+5. **回到项目重装依赖并启动**：
+
+```powershell
 cd D:\Code\cloudWardrobe-ui
-taskkill /F /IM node.exe
+taskkill /F /IM node.exe 2>$null
 Remove-Item -Recurse -Force node_modules, .expo -ErrorAction SilentlyContinue
+Remove-Item package-lock.json -ErrorAction SilentlyContinue
 npm install
 npm run web:clear
 ```
 
-> 不想用 nvm？直接从 https://nodejs.org 下载 **20 LTS** 安装包，装完后重启终端。
+浏览器打开：**http://localhost:19006**
+
+### 可选：以后想管理多个 Node 版本再用 nvm-windows
+
+仅当你需要同时保留 Node 20 和 24 时才装：
+
+- 下载：https://github.com/coreybutler/nvm-windows/releases  
+- 安装后（管理员 PowerShell）：`nvm install 20` → `nvm use 20`
 
 ## 常见问题
 

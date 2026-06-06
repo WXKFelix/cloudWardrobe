@@ -28,16 +28,17 @@ if (nodeMajor >= 23) {
   console.error(`  ❌ Node ${process.version} 不受 Expo SDK 52 支持（需 18–22）`);
   console.error('  Metro 会卡在 "Starting Metro Bundler"，无法打开网页。');
   console.error('');
-  console.error('  修复（nvm-windows，以管理员身份打开终端）：');
-  console.error('    nvm install 20.18.0');
-  console.error('    nvm use 20.18.0');
-  console.error('    node -v          # 应显示 v20.x，不是 v24.14.0');
-  console.error('    rmdir /s /q node_modules');
-  console.error('    del package-lock.json');
-  console.error('    npm install');
-  console.error('    npm run web:clear');
+  console.error('  修复（推荐：不用 nvm，直接装 Node 20 LTS）：');
+  console.error('    1. 打开 https://nodejs.org/en/download/prebuilt-installer');
+  console.error('       选 Version=20.x LTS, Platform=Windows, 下载 .msi 安装');
+  console.error('    2. 若已装 Node 24，先在「设置 → 应用」卸载 Node.js');
+  console.error('    3. 安装 Node 20 后，关闭并重新打开 PowerShell');
+  console.error('    4. node -v          # 应显示 v20.x，不是 v24.14.0');
+  console.error('    5. rmdir /s /q node_modules && del package-lock.json');
+  console.error('    6. npm install && npm run web:clear');
   console.error('');
-  console.error('  无 nvm 时直接安装: https://nodejs.org/en/download (选 20 LTS)');
+  console.error('  可选：安装 nvm-windows 管理多版本');
+  console.error('    https://github.com/coreybutler/nvm-windows/releases');
   console.error('');
   process.exit(1);
 }
