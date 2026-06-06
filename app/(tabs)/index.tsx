@@ -1,16 +1,24 @@
-import { StyleSheet, Text, View } from 'react-native';
+import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { ScreenContainer } from '@/components/ScreenContainer';
+import { SectionHeader } from '@/components/SectionHeader';
 import { OutfitCard } from '@/components/OutfitCard';
 import { Card } from '@/components/ui/Card';
-import { brand } from '@/constants/brand';
 import { mockFashionTips, mockReminders } from '@/constants/mockData';
-import { colors, radius, spacing, typography } from '@/constants/theme';
+import { colors, radius, shadows, spacing, typography } from '@/constants/theme';
 import {
   getWardrobeOverview,
   outfitPresets,
   resolveOutfitPreset,
   useAppStore,
 } from '@/store/useAppStore';
+
+const categoryIcons: Record<string, keyof typeof Ionicons.glyphMap> = {
+  top: 'shirt-outline',
+  bottom: 'body-outline',
+  shoes: 'footsteps-outline',
+  outerwear: 'cloudy-outline',
+};
 
 export default function HomeScreen() {
   const clothing = useAppStore((s) => s.clothing);
@@ -23,23 +31,23 @@ export default function HomeScreen() {
   const stats = getWardrobeOverview(clothing);
   const outfit = resolveOutfitPreset(outfitPresets[todayOutfitIndex], clothing);
 
+  const hour = new Date().getHours();
+  const greeting = hour < 12 ? '早上好' : hour < 18 ? '下午好' : '晚上好';
+
   return (
     <ScreenContainer>
-      <View style={styles.ecoBanner}>
-        <Text style={styles.ecoBannerIcon}>🌿</Text>
-        <View style={styles.ecoBannerText}>
-          <Text style={styles.ecoBannerTitle}>{brand.ecoTagline}</Text>
-          <Text style={styles.ecoBannerDesc}>随性穿衣，减少浪费</Text>
-        </View>
-      </View>
-
-      <View style={styles.header}>
-        <View>
-          <Text style={styles.greeting}>你好，{username || '用户'}</Text>
-          <Text style={styles.weather}>☀️ 北京 22°C 晴 · 适宜轻薄穿搭</Text>
+      <View style={styles.topBar}>
+        <View style={styles.greetingBlock}>
+          <Text style={styles.greeting}>
+            {greeting}，{username || '用户'}
+          </Text>
+          <View style={styles.weatherPill}>
+            <Ionicons name="sunny-outline" size={14} color={colors.primary} />
+            <Text style={styles.weatherText}>北京 22°C 晴 · 适宜轻薄穿搭</Text>
+          </View>
         </View>
         <View style={styles.bell}>
-          <Text>🔔</Text>
+          <Ionicons name="notifications-outline" size={20} color={colors.primary} />
         </View>
       </View>
 
@@ -54,96 +62,168 @@ export default function HomeScreen() {
       />
 
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>
-          衣橱概览 · {stats.total} 件 · 本周穿搭 {stats.weeklyOutfits} 次
-        </Text>
-        <View style={styles.statGrid}>
+        <SectionHeader
+          eyebrow="衣橱"
+          title="衣橱概览"
+          subtitle={`共 ${stats.total} 件 · 本周穿搭 ${stats.weeklyOutfits} 次`}
+        />
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.statRow}
+        >
           {stats.categories.map((cat) => (
-            <Card key={cat.key} style={styles.statCard}>
+            <View key={cat.key} style={styles.statCard}>
+              <View style={styles.statIconWrap}>
+                <Ionicons
+                  name={categoryIcons[cat.key] ?? 'ellipse-outline'}
+                  size={18}
+                  color={colors.primary}
+                />
+              </View>
               <Text style={styles.statCount}>{cat.count}</Text>
               <Text style={styles.statLabel}>{cat.label}</Text>
-            </Card>
+            </View>
+          ))}
+        </ScrollView>
+      </View>
+
+      <View style={styles.section}>
+        <SectionHeader eyebrow="环保" title="绿色提醒" subtitle="让衣物保持最佳状态" />
+        <View style={styles.reminderList}>
+          {mockReminders.map((r) => (
+            <View key={r.id} style={styles.reminder}>
+              <View style={styles.reminderIcon}>
+                <Ionicons
+                  name={r.type === 'warning' ? 'water-outline' : 'archive-outline'}
+                  size={16}
+                  color={colors.primary}
+                />
+              </View>
+              <Text style={styles.reminderText}>{r.text}</Text>
+            </View>
           ))}
         </View>
       </View>
 
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>🌱 绿色提醒</Text>
-        {mockReminders.map((r) => (
-          <View key={r.id} style={styles.reminder}>
-            <Text style={styles.reminderText}>· {r.text}</Text>
-          </View>
-        ))}
-      </View>
-
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>💡 时尚灵感</Text>
-        {mockFashionTips.map((tip) => (
-          <Card key={tip.id} style={styles.tipCard}>
-            <Text style={styles.tipTitle}>{tip.title}</Text>
-            <Text style={styles.tipDesc}>{tip.desc}</Text>
-          </Card>
-        ))}
+        <SectionHeader eyebrow="灵感" title="时尚灵感" />
+        <View style={styles.tipList}>
+          {mockFashionTips.map((tip) => (
+            <Card key={tip.id} style={styles.tipCard}>
+              <Text style={styles.tipTitle}>{tip.title}</Text>
+              <Text style={styles.tipDesc}>{tip.desc}</Text>
+            </Card>
+          ))}
+        </View>
       </View>
     </ScreenContainer>
   );
 }
 
 const styles = StyleSheet.create({
-  ecoBanner: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.md,
-    backgroundColor: colors.ecoMuted,
-    borderRadius: radius.lg,
-    padding: spacing.md,
-    marginTop: spacing.sm,
-    marginBottom: spacing.md,
-    borderWidth: 1,
-    borderColor: colors.techBorder,
-  },
-  ecoBannerIcon: { fontSize: 28 },
-  ecoBannerText: { flex: 1 },
-  ecoBannerTitle: { ...typography.label, color: colors.primary },
-  ecoBannerDesc: { ...typography.caption, color: colors.textSecondary, marginTop: 2 },
-  header: {
+  topBar: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: spacing.lg,
-    marginTop: spacing.sm,
+    alignItems: 'flex-start',
+    marginTop: spacing.xs,
+    marginBottom: spacing.md,
   },
-  greeting: { ...typography.subtitle, color: colors.text },
-  weather: { ...typography.caption, color: colors.textSecondary, marginTop: 4 },
+  greetingBlock: { flex: 1, gap: 8 },
+  greeting: {
+    ...typography.title,
+    fontSize: 22,
+    color: colors.text,
+    lineHeight: 30,
+  },
+  weatherPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    alignSelf: 'flex-start',
+    gap: 6,
+    backgroundColor: colors.ecoMuted,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: radius.full,
+  },
+  weatherText: {
+    ...typography.caption,
+    color: colors.textSecondary,
+    fontSize: 12,
+  },
   bell: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: 42,
+    height: 42,
+    borderRadius: 21,
     backgroundColor: colors.surface,
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: colors.borderLight,
+    ...shadows.card,
   },
-  section: { marginTop: spacing.lg, gap: spacing.sm },
-  sectionTitle: { ...typography.label, color: colors.text },
-  statGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },
+  section: { marginTop: spacing.lg },
+  statRow: {
+    gap: spacing.sm,
+    paddingRight: spacing.sm,
+  },
   statCard: {
-    width: '47%',
-    alignItems: 'center',
+    width: 88,
+    backgroundColor: colors.surface,
+    borderRadius: radius.lg,
     paddingVertical: spacing.md,
+    paddingHorizontal: spacing.sm,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: colors.borderLight,
+    ...shadows.card,
   },
-  statCount: { ...typography.title, color: colors.primary },
-  statLabel: { ...typography.caption, color: colors.textSecondary },
+  statIconWrap: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: colors.ecoMuted,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 6,
+  },
+  statCount: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: colors.primary,
+    lineHeight: 26,
+  },
+  statLabel: { ...typography.caption, color: colors.textSecondary, fontSize: 12 },
+  reminderList: { gap: spacing.sm },
   reminder: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
     backgroundColor: colors.warningBg,
     padding: spacing.md,
-    borderRadius: radius.md,
-    borderLeftWidth: 3,
-    borderLeftColor: colors.eco,
+    borderRadius: radius.lg,
+    borderWidth: 1,
+    borderColor: 'rgba(82, 183, 136, 0.25)',
   },
-  reminderText: { ...typography.body, color: colors.text },
-  tipCard: { marginBottom: spacing.sm },
+  reminderIcon: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: colors.surface,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  reminderText: {
+    ...typography.body,
+    flex: 1,
+    fontSize: 14,
+    color: colors.text,
+    lineHeight: 20,
+  },
+  tipList: { gap: spacing.sm },
+  tipCard: {
+    paddingVertical: spacing.md,
+  },
   tipTitle: { ...typography.label, color: colors.text },
-  tipDesc: { ...typography.caption, color: colors.textSecondary, marginTop: 4 },
+  tipDesc: { ...typography.caption, color: colors.textSecondary, marginTop: 4, lineHeight: 18 },
 });
