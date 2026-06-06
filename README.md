@@ -41,6 +41,24 @@ Logs for your project will appear below.
 
 ## 常见问题
 
+### 一直加载、不出现访问地址
+
+**常见原因：`assets/` 图片损坏**（仅 8 字节的假 PNG 会导致 Metro 卡住）。
+
+拉取最新代码后重新安装：
+
+```powershell
+git pull origin cursor/ui-interactive-prototype-6952
+npm install
+npm run web:clear
+```
+
+启动时会 **立即打印** 访问地址：
+
+```
+>>> http://localhost:19006 <<<
+```
+
 ### Windows：`Port 8081 is being used` / 启动后直接回到命令行
 
 通常是 **上次 Expo 没关干净**，端口被残留 `node.exe` 占用。
