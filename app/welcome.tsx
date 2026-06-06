@@ -9,23 +9,24 @@ import { colors, radius, spacing, typography } from '@/constants/theme';
 export default function WelcomeScreen() {
   const router = useRouter();
   const { height } = useWindowDimensions();
-  const logoSize = height < 740 ? 158 : 180;
-  const logoStageMinWidth = height < 740 ? 220 : 260;
+  const iconSize = height < 700 ? 52 : 60;
 
   return (
     <ScreenContainer style={styles.container}>
       <View style={styles.hero}>
-        <View style={[styles.logoStage, { minWidth: logoStageMinWidth }]}>
-          <View style={styles.logoCornerTL} />
-          <View style={styles.logoCornerBR} />
-          <CloudWardrobeLogo size={logoSize} />
+        <View style={[styles.iconHalo, { width: iconSize + 28, height: iconSize + 28 }]}>
+          <CloudWardrobeLogo size={iconSize} />
         </View>
 
-        <Text style={styles.ecoTag}>{brand.ecoTagline}</Text>
         <Text style={styles.brand}>{brand.name}</Text>
+        <Text style={styles.brandEn}>{brand.nameEn}</Text>
+
+        <View style={styles.tagRow}>
+          <Text style={styles.ecoTag}>{brand.ecoTagline}</Text>
+        </View>
+
         <Text style={styles.slogan}>{brand.slogan}</Text>
         <Text style={styles.sloganSub}>{brand.sloganSub}</Text>
-        <Text style={styles.mission}>{brand.mission}</Text>
       </View>
 
       <View style={styles.features}>
@@ -52,75 +53,71 @@ export default function WelcomeScreen() {
 
 const styles = StyleSheet.create({
   container: {
-    paddingTop: spacing.md,
-    gap: spacing.md,
+    paddingTop: spacing.sm,
+    gap: spacing.lg,
   },
-  hero: { alignItems: 'center', gap: spacing.xs },
-  logoStage: {
-    position: 'relative',
+  hero: {
+    alignItems: 'center',
+    gap: 6,
+    paddingTop: spacing.xs,
+  },
+  iconHalo: {
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: spacing.xs,
-    paddingVertical: spacing.md,
-    paddingHorizontal: spacing.lg,
-    backgroundColor: 'rgba(255, 255, 255, 0.72)',
-    borderRadius: radius.xl,
+    borderRadius: 999,
+    backgroundColor: colors.surface,
     borderWidth: 1,
-    borderColor: 'rgba(0, 217, 181, 0.28)',
-    overflow: 'hidden',
+    borderColor: colors.borderLight,
+    marginBottom: spacing.sm,
+    shadowColor: colors.primaryDark,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
+    elevation: 2,
   },
-  logoCornerTL: {
-    position: 'absolute',
-    top: 12,
-    left: 12,
-    width: 18,
-    height: 18,
-    borderTopWidth: 2,
-    borderLeftWidth: 2,
-    borderColor: colors.tech,
-    opacity: 0.35,
-    borderTopLeftRadius: 4,
+  brand: {
+    fontSize: 30,
+    fontWeight: '700',
+    lineHeight: 38,
+    color: colors.text,
+    letterSpacing: 1,
   },
-  logoCornerBR: {
-    position: 'absolute',
-    bottom: 12,
-    right: 12,
-    width: 18,
-    height: 18,
-    borderBottomWidth: 2,
-    borderRightWidth: 2,
-    borderColor: colors.tech,
-    opacity: 0.35,
-    borderBottomRightRadius: 4,
+  brandEn: {
+    ...typography.caption,
+    fontSize: 12,
+    fontWeight: '500',
+    letterSpacing: 2.5,
+    color: colors.textMuted,
+    textTransform: 'uppercase',
+    marginTop: 2,
+  },
+  tagRow: {
+    marginTop: spacing.sm,
+    marginBottom: spacing.xs,
   },
   ecoTag: {
     ...typography.caption,
-    color: colors.tech,
-    backgroundColor: colors.techGlow,
+    color: colors.primary,
+    backgroundColor: colors.ecoMuted,
     paddingHorizontal: 12,
-    paddingVertical: 4,
+    paddingVertical: 5,
     borderRadius: radius.full,
     overflow: 'hidden',
     fontWeight: '600',
-    letterSpacing: 1,
+    fontSize: 12,
+  },
+  slogan: {
+    ...typography.subtitle,
+    color: colors.text,
+    textAlign: 'center',
     marginTop: spacing.xs,
   },
-  brand: {
-    ...typography.hero,
-    color: colors.primary,
-    marginTop: spacing.sm,
-    fontSize: 28,
-    lineHeight: 36,
-  },
-  slogan: { ...typography.subtitle, color: colors.text, marginTop: spacing.xs },
-  sloganSub: { ...typography.body, color: colors.tech, fontWeight: '600' },
-  mission: {
-    ...typography.caption,
+  sloganSub: {
+    ...typography.body,
+    fontSize: 15,
     color: colors.textSecondary,
     textAlign: 'center',
-    marginTop: spacing.sm,
-    paddingHorizontal: spacing.lg,
-    lineHeight: 20,
+    lineHeight: 22,
   },
   features: { gap: spacing.sm },
   featureRow: {
@@ -134,16 +131,16 @@ const styles = StyleSheet.create({
     borderColor: colors.borderLight,
   },
   featureIconWrap: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
     backgroundColor: colors.ecoMuted,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  featureEmoji: { fontSize: 22 },
+  featureEmoji: { fontSize: 20 },
   featureTextWrap: { flex: 1 },
-  featureTitle: { ...typography.label, color: colors.text },
+  featureTitle: { ...typography.label, color: colors.text, fontSize: 15 },
   featureText: { ...typography.caption, color: colors.textSecondary, marginTop: 2 },
-  actions: { gap: spacing.md, marginTop: spacing.sm },
+  actions: { gap: spacing.md },
 });
