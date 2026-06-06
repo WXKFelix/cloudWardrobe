@@ -1,16 +1,28 @@
 import { Tabs } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { StyleSheet, View } from 'react-native';
+import { Platform, StyleSheet, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { colors, shadows } from '@/constants/theme';
 
 export default function TabLayout() {
+  const insets = useSafeAreaInsets();
+  const bottomInset = Math.max(insets.bottom, Platform.OS === 'web' ? 8 : 0);
+  const tabBarHeight = 56 + bottomInset;
+
   return (
     <Tabs
       screenOptions={{
         headerShown: false,
         tabBarActiveTintColor: colors.primary,
         tabBarInactiveTintColor: colors.textMuted,
-        tabBarStyle: styles.tabBar,
+        tabBarStyle: {
+          ...styles.tabBar,
+          height: tabBarHeight,
+          paddingBottom: bottomInset + 4,
+          paddingTop: 8,
+        },
+        tabBarItemStyle: styles.tabItem,
+        tabBarIconStyle: styles.tabIcon,
         tabBarLabelStyle: styles.tabLabel,
       }}
     >
@@ -63,11 +75,22 @@ const styles = StyleSheet.create({
     backgroundColor: colors.surfaceGlass,
     borderTopColor: colors.techBorder,
     borderTopWidth: 1,
-    height: 64,
-    paddingBottom: 8,
-    paddingTop: 8,
   },
-  tabLabel: { fontSize: 11, fontWeight: '600' },
+  tabItem: {
+    paddingTop: 2,
+    paddingBottom: 0,
+  },
+  tabIcon: {
+    marginBottom: 0,
+  },
+  tabLabel: {
+    fontSize: 11,
+    fontWeight: '600',
+    lineHeight: 14,
+    marginTop: 2,
+    marginBottom: 2,
+    ...(Platform.OS === 'android' ? { includeFontPadding: false } : {}),
+  },
   addButton: {
     width: 52,
     height: 52,
@@ -75,7 +98,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.primary,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 20,
+    marginBottom: 16,
     borderWidth: 2,
     borderColor: colors.tech,
     ...shadows.glow,

@@ -1,6 +1,7 @@
 import { StyleSheet, Text, View } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { ScreenContainer } from '@/components/ScreenContainer';
+import { ScreenHeader } from '@/components/ScreenHeader';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { categoryLabels } from '@/constants/mockData';
@@ -40,10 +41,7 @@ export default function ClothingDetailScreen() {
 
   return (
     <ScreenContainer>
-      <View style={styles.header}>
-        <Button title="← 返回" onPress={() => router.back()} variant="ghost" style={styles.backBtn} />
-        <Text style={styles.title}>衣物详情</Text>
-      </View>
+      <ScreenHeader title="衣物详情" onBack={() => router.back()} />
 
       <View style={[styles.hero, { backgroundColor: item.colorHex + '33' }]}>
         <Text style={styles.emoji}>{item.emoji}</Text>
@@ -71,9 +69,6 @@ export default function ClothingDetailScreen() {
 }
 
 const styles = StyleSheet.create({
-  header: { marginBottom: spacing.md },
-  backBtn: { alignSelf: 'flex-start', paddingHorizontal: 0 },
-  title: { ...typography.title, color: colors.text, marginTop: spacing.sm },
   hero: {
     height: 200,
     borderRadius: radius.xl,
