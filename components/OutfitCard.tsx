@@ -28,7 +28,7 @@ export function OutfitCard({
       <Text style={styles.title}>{title}</Text>
       <View style={styles.emojiRow}>
         {emojis.map((emoji, i) => (
-          <View key={i} style={styles.emojiBox}>
+          <View key={`${items[i]}-${emoji}`} style={styles.emojiBox}>
             <Text style={styles.emoji}>{emoji}</Text>
             <Text style={styles.itemName} numberOfLines={1}>
               {items[i]}

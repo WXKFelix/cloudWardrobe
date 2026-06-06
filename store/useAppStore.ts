@@ -131,18 +131,24 @@ export const useAppStore = create<AppState>((set, get) => ({
 
   refreshOutfit: () => {
     const { todayOutfitIndex } = get();
-    set({ todayOutfitIndex: (todayOutfitIndex + 1) % 2, todayOutfitConfirmed: false });
+    set({
+      todayOutfitIndex: (todayOutfitIndex + 1) % outfitPresets.length,
+      todayOutfitConfirmed: false,
+    });
   },
 
   confirmOutfit: () => {
     const today = new Date().getDate();
+    const wornIds = new Set(outfitPresets[get().todayOutfitIndex].clothingIds);
     set((state) => ({
       todayOutfitConfirmed: true,
       outfitDays: state.outfitDays.includes(today)
         ? state.outfitDays
         : [...state.outfitDays, today],
-      clothing: state.clothing.map((item, index) =>
-        index < 3 ? { ...item, wearCount: item.wearCount + 1, lastWornDaysAgo: 0 } : item
+      clothing: state.clothing.map((item) =>
+        wornIds.has(item.id)
+          ? { ...item, wearCount: item.wearCount + 1, lastWornDaysAgo: 0 }
+          : item
       ),
     }));
   },
@@ -163,20 +169,43 @@ export const useAppStore = create<AppState>((set, get) => ({
     }),
 }));
 
-export const outfitPresets = [
+export interface OutfitPreset {
+  title: string;
+  desc: string;
+  /** 上衣、下装、鞋子 — 对应 mockClothing 中的 id */
+  clothingIds: [string, string, string];
+}
+
+export const outfitPresets: OutfitPreset[] = [
   {
     title: '清爽通勤风',
     desc: '适合今日 22°C 晴好天气，简约干练',
-    items: ['蓝色条纹衬衫', '黑色休闲裤', '白色运动鞋'],
-    emojis: ['👔', '👖', '👟'],
+    clothingIds: ['1', '2', '3'],
   },
   {
     title: '休闲周末风',
-    desc: '轻松舒适，适合外出散步或咖啡时光',
-    items: ['灰色针织开衫', '黑色休闲裤', '白色运动鞋'],
-    emojis: ['🧶', '👖', '👟'],
+    desc: '轻松舒适，针织开衫配乐福鞋',
+    clothingIds: ['5', '6', '7'],
+  },
+  {
+    title: '都市风衣 Look',
+    desc: '防风有型，早晚温差从容应对',
+    clothingIds: ['4', '6', '3'],
   },
 ];
+
+export function resolveOutfitPreset(
+  preset: OutfitPreset,
+  clothing: ClothingItem[]
+): { title: string; desc: string; items: string[]; emojis: string[] } {
+  const pieces = preset.clothingIds.map((id) => clothing.find((c) => c.id === id));
+  return {
+    title: preset.title,
+    desc: preset.desc,
+    items: pieces.map((p) => p?.name ?? '—'),
+    emojis: pieces.map((p) => p?.emoji ?? '👕'),
+  };
+}
 
 export function getWardrobeOverview(clothing: ClothingItem[]) {
   if (clothing.length === 0) return wardrobeStats;

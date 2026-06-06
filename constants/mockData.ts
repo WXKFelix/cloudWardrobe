@@ -109,6 +109,19 @@ export const mockClothing: ClothingItem[] = [
     status: 'normal',
     emoji: '👔',
   },
+  {
+    id: '7',
+    name: '棕色乐福鞋',
+    category: 'shoes',
+    color: '棕',
+    colorHex: '#8B5E3C',
+    season: '四季',
+    occasion: '通勤',
+    wearCount: 4,
+    lastWornDaysAgo: 7,
+    status: 'normal',
+    emoji: '👞',
+  },
 ];
 
 export const mockOutfitDays = [1, 2, 4, 5, 6];

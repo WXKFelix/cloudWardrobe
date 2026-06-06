@@ -5,7 +5,12 @@ import { Card } from '@/components/ui/Card';
 import { brand } from '@/constants/brand';
 import { mockFashionTips, mockReminders } from '@/constants/mockData';
 import { colors, radius, spacing, typography } from '@/constants/theme';
-import { getWardrobeOverview, outfitPresets, useAppStore } from '@/store/useAppStore';
+import {
+  getWardrobeOverview,
+  outfitPresets,
+  resolveOutfitPreset,
+  useAppStore,
+} from '@/store/useAppStore';
 
 export default function HomeScreen() {
   const clothing = useAppStore((s) => s.clothing);
@@ -16,7 +21,7 @@ export default function HomeScreen() {
   const username = useAppStore((s) => s.username);
 
   const stats = getWardrobeOverview(clothing);
-  const outfit = outfitPresets[todayOutfitIndex];
+  const outfit = resolveOutfitPreset(outfitPresets[todayOutfitIndex], clothing);
 
   return (
     <ScreenContainer>
