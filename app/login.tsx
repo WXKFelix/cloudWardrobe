@@ -4,6 +4,7 @@ import { useRouter } from 'expo-router';
 import { ScreenContainer } from '@/components/ScreenContainer';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
+import { PasswordInput } from '@/components/ui/PasswordInput';
 import { ModalSheet } from '@/components/ui/ModalSheet';
 import { useAppStore } from '@/store/useAppStore';
 import { colors, spacing, typography } from '@/constants/theme';
@@ -46,12 +47,11 @@ export default function LoginScreen() {
         placeholder="请输入账号"
         autoCapitalize="none"
       />
-      <Input
+      <PasswordInput
         label="密码"
         value={password}
         onChangeText={setPassword}
         placeholder="请输入密码"
-        secureTextEntry
         style={{ marginTop: spacing.md }}
       />
       {error ? <Text style={styles.error}>{error}</Text> : null}

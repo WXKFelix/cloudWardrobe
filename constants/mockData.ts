@@ -133,3 +133,78 @@ export const wardrobeStats = {
     { key: 'outerwear', label: '外套', count: 14 },
   ],
 };
+
+export type OrderType = 'storage' | 'pickup' | 'care';
+export type OrderStatus = 'pending' | 'processing' | 'shipping' | 'completed' | 'cancelled';
+
+export interface Order {
+  id: string;
+  type: OrderType;
+  title: string;
+  status: OrderStatus;
+  date: string;
+  amount: number;
+  items: string[];
+  trackingNo?: string;
+}
+
+export const orderTypeLabels: Record<OrderType, string> = {
+  storage: '仓储',
+  pickup: '取衣',
+  care: '保养',
+};
+
+export const orderStatusLabels: Record<OrderStatus, string> = {
+  pending: '待支付',
+  processing: '处理中',
+  shipping: '配送中',
+  completed: '已完成',
+  cancelled: '已取消',
+};
+
+export const mockOrders: Order[] = [
+  {
+    id: 'ORD-20250601',
+    type: 'storage',
+    title: '冬装批量入库',
+    status: 'completed',
+    date: '2025-05-28',
+    amount: 29,
+    items: ['米色风衣', '灰色针织开衫'],
+    trackingNo: 'SF1234567890',
+  },
+  {
+    id: 'ORD-20250602',
+    type: 'pickup',
+    title: '北京出差取衣',
+    status: 'shipping',
+    date: '2025-06-04',
+    amount: 15,
+    items: ['蓝色条纹衬衫', '藏青西裤'],
+    trackingNo: 'SF9876543210',
+  },
+  {
+    id: 'ORD-20250603',
+    type: 'care',
+    title: '羊绒衫深度保养',
+    status: 'processing',
+    date: '2025-06-05',
+    amount: 49,
+    items: ['灰色针织开衫'],
+  },
+];
+
+export const cloudPlans = [
+  { id: 'free', name: '免费版', quota: 50, price: 0, desc: '新用户专享' },
+  { id: 'standard', name: '标准版', quota: 100, price: 15, desc: '月付 ¥15' },
+  { id: 'premium', name: '尊享版', quota: 200, price: 39, desc: '月付 ¥39' },
+];
+
+export const membershipBenefits = [
+  { icon: '☁️', title: '云空间扩容', desc: '标准版 100 件 / 尊享版 200 件' },
+  { icon: '✨', title: '高级穿搭推荐', desc: '无限次换一套，AI 深度分析' },
+  { icon: '📦', title: '免费取衣 2 次/月', desc: '尊享版专享' },
+  { icon: '🧼', title: '保养 8 折', desc: '门店洗护服务折扣' },
+];
+
+export const feedbackCategories = ['功能建议', '穿搭推荐', '订单物流', '账号问题', '其他'];

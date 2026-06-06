@@ -21,6 +21,11 @@ export default function RootLayout() {
         <Stack.Screen name="onboarding/guide" />
         <Stack.Screen name="(tabs)" />
         <Stack.Screen name="clothing/[id]" options={{ presentation: 'modal' }} />
+        <Stack.Screen name="profile/cloud-storage" />
+        <Stack.Screen name="profile/membership" />
+        <Stack.Screen name="profile/orders" />
+        <Stack.Screen name="profile/feedback" />
+        <Stack.Screen name="profile/settings" />
       </Stack>
     </>
   );

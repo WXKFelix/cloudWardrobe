@@ -4,6 +4,7 @@ import { useRouter } from 'expo-router';
 import { ScreenContainer } from '@/components/ScreenContainer';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
+import { PasswordInput } from '@/components/ui/PasswordInput';
 import { ModalSheet } from '@/components/ui/ModalSheet';
 import { useAppStore } from '@/store/useAppStore';
 import { colors, spacing, typography } from '@/constants/theme';
@@ -50,21 +51,19 @@ export default function RegisterScreen() {
         placeholder="4-20 个字符"
         error={errors.username}
       />
-      <Input
+      <PasswordInput
         label="密码"
         value={password}
         onChangeText={setPassword}
         placeholder="8 位以上，含字母和数字"
-        secureTextEntry
         error={errors.password}
         style={{ marginTop: spacing.md }}
       />
-      <Input
+      <PasswordInput
         label="确认密码"
         value={confirm}
         onChangeText={setConfirm}
         placeholder="再次输入密码"
-        secureTextEntry
         error={errors.confirm}
         style={{ marginTop: spacing.md }}
       />

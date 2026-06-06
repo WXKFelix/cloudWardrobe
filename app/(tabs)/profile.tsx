@@ -8,11 +8,11 @@ import { colors, radius, spacing, typography } from '@/constants/theme';
 import { useAppStore } from '@/store/useAppStore';
 
 const menuItems = [
-  { icon: '☁️', label: '云空间管理', desc: '查看用量与扩容' },
-  { icon: '👑', label: '会员中心', desc: '积分 · 等级 · 权益' },
-  { icon: '📦', label: '我的订单', desc: '仓储 · 取衣 · 保养' },
-  { icon: '💬', label: '意见反馈', desc: '帮助我们改进' },
-  { icon: '⚙️', label: '设置', desc: '通知 · 隐私 · 主题' },
+  { icon: '☁️', label: '云空间管理', desc: '查看用量与扩容', route: '/profile/cloud-storage' as const },
+  { icon: '👑', label: '会员中心', desc: '积分 · 等级 · 权益', route: '/profile/membership' as const },
+  { icon: '📦', label: '我的订单', desc: '仓储 · 取衣 · 保养', route: '/profile/orders' as const },
+  { icon: '💬', label: '意见反馈', desc: '帮助我们改进', route: '/profile/feedback' as const },
+  { icon: '⚙️', label: '设置', desc: '通知 · 隐私 · 主题', route: '/profile/settings' as const },
 ];
 
 export default function ProfileScreen() {
@@ -37,24 +37,26 @@ export default function ProfileScreen() {
         </View>
       </Card>
 
-      <Card style={styles.quotaCard}>
-        <View style={styles.quotaHeader}>
-          <Text style={styles.quotaTitle}>☁️ 云空间</Text>
-          <Text style={styles.quotaCount}>
-            {cloudUsed}/{cloudQuota} 件
+      <Pressable onPress={() => router.push('/profile/cloud-storage')}>
+        <Card style={styles.quotaCard}>
+          <View style={styles.quotaHeader}>
+            <Text style={styles.quotaTitle}>☁️ 云空间</Text>
+            <Text style={styles.quotaCount}>
+              {cloudUsed}/{cloudQuota} 件
+            </Text>
+          </View>
+          <View style={styles.progressBg}>
+            <View style={[styles.progressFill, { width: `${quotaPercent}%` }]} />
+          </View>
+          <Text style={styles.quotaHint}>
+            {quotaPercent >= 80 ? '空间即将用完，建议扩容或存入仓库' : '新用户专享 50 件免费额度'}
           </Text>
-        </View>
-        <View style={styles.progressBg}>
-          <View style={[styles.progressFill, { width: `${quotaPercent}%` }]} />
-        </View>
-        <Text style={styles.quotaHint}>
-          {quotaPercent >= 80 ? '空间即将用完，建议扩容或存入仓库' : '新用户专享 50 件免费额度'}
-        </Text>
-      </Card>
+        </Card>
+      </Pressable>
 
       <View style={styles.menu}>
         {menuItems.map((item) => (
-          <Pressable key={item.label} style={styles.menuItem}>
+          <Pressable key={item.label} style={styles.menuItem} onPress={() => router.push(item.route)}>
             <Text style={styles.menuIcon}>{item.icon}</Text>
             <View style={styles.menuText}>
               <Text style={styles.menuLabel}>{item.label}</Text>

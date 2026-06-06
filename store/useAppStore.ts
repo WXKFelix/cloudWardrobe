@@ -1,11 +1,21 @@
 import { create } from 'zustand';
 import {
   ClothingItem,
+  Order,
   UserType,
   mockClothing,
+  mockOrders,
   mockOutfitDays,
   wardrobeStats,
 } from '@/constants/mockData';
+
+export interface AppSettings {
+  notifyOutfit: boolean;
+  notifyPromo: boolean;
+  notifyOrder: boolean;
+  darkMode: boolean;
+  privacyShare: boolean;
+}
 
 interface AppState {
   isAuthenticated: boolean;
@@ -14,6 +24,10 @@ interface AppState {
   userType: UserType | null;
   cloudQuota: number;
   cloudUsed: number;
+  membershipLevel: 'free' | 'standard' | 'premium';
+  points: number;
+  orders: Order[];
+  settings: AppSettings;
   clothing: ClothingItem[];
   outfitDays: number[];
   todayOutfitIndex: number;
@@ -25,6 +39,10 @@ interface AppState {
   refreshOutfit: () => void;
   confirmOutfit: () => void;
   addClothing: (item: Omit<ClothingItem, 'id' | 'wearCount' | 'lastWornDaysAgo' | 'status'>) => void;
+  expandCloudQuota: (quota: number, level: 'free' | 'standard' | 'premium') => void;
+  redeemPoints: (cost: number) => boolean;
+  updateSettings: (patch: Partial<AppSettings>) => void;
+  cancelOrder: (orderId: string) => void;
 }
 
 export const useAppStore = create<AppState>((set, get) => ({
@@ -34,6 +52,16 @@ export const useAppStore = create<AppState>((set, get) => ({
   userType: null,
   cloudQuota: 50,
   cloudUsed: mockClothing.length,
+  membershipLevel: 'free',
+  points: 320,
+  orders: mockOrders,
+  settings: {
+    notifyOutfit: true,
+    notifyPromo: true,
+    notifyOrder: true,
+    darkMode: false,
+    privacyShare: false,
+  },
   clothing: mockClothing,
   outfitDays: mockOutfitDays,
   todayOutfitIndex: 0,
@@ -66,7 +94,32 @@ export const useAppStore = create<AppState>((set, get) => ({
       userType: null,
       todayOutfitIndex: 0,
       todayOutfitConfirmed: false,
+      membershipLevel: 'free',
+      points: 320,
+      orders: mockOrders,
     }),
+
+  expandCloudQuota: (quota, level) =>
+    set({ cloudQuota: quota, membershipLevel: level }),
+
+  redeemPoints: (cost) => {
+    const { points } = get();
+    if (points < cost) return false;
+    set({ points: points - cost });
+    return true;
+  },
+
+  updateSettings: (patch) =>
+    set((state) => ({ settings: { ...state.settings, ...patch } })),
+
+  cancelOrder: (orderId) =>
+    set((state) => ({
+      orders: state.orders.map((o) =>
+        o.id === orderId && (o.status === 'pending' || o.status === 'processing')
+          ? { ...o, status: 'cancelled' as const }
+          : o
+      ),
+    })),
 
   completeOnboarding: () => set({ hasCompletedOnboarding: true }),
 
