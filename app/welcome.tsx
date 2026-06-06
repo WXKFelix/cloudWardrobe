@@ -13,8 +13,9 @@ export default function WelcomeScreen() {
     <ScreenContainer scroll={false} style={styles.container}>
       <View style={styles.hero}>
         <View style={styles.logoStage}>
-          <View style={styles.logoScanLine} />
-          <CloudWardrobeLogo size={172} />
+          <View style={styles.logoCornerTL} />
+          <View style={styles.logoCornerBR} />
+          <CloudWardrobeLogo size={188} />
         </View>
 
         <Text style={styles.ecoTag}>{brand.ecoTagline}</Text>
@@ -59,22 +60,38 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: spacing.sm,
-    paddingVertical: spacing.md,
-    paddingHorizontal: spacing.lg,
-    backgroundColor: colors.surfaceGlass,
+    paddingVertical: spacing.lg,
+    paddingHorizontal: spacing.xl,
+    backgroundColor: 'rgba(255, 255, 255, 0.72)',
     borderRadius: radius.xl,
     borderWidth: 1,
-    borderColor: colors.techBorder,
+    borderColor: 'rgba(0, 217, 181, 0.28)',
     overflow: 'hidden',
+    minWidth: 260,
   },
-  logoScanLine: {
+  logoCornerTL: {
     position: 'absolute',
-    left: 0,
-    right: 0,
-    top: '42%',
-    height: 1,
-    backgroundColor: colors.tech,
-    opacity: 0.2,
+    top: 12,
+    left: 12,
+    width: 18,
+    height: 18,
+    borderTopWidth: 2,
+    borderLeftWidth: 2,
+    borderColor: colors.tech,
+    opacity: 0.35,
+    borderTopLeftRadius: 4,
+  },
+  logoCornerBR: {
+    position: 'absolute',
+    bottom: 12,
+    right: 12,
+    width: 18,
+    height: 18,
+    borderBottomWidth: 2,
+    borderRightWidth: 2,
+    borderColor: colors.tech,
+    opacity: 0.35,
+    borderBottomRightRadius: 4,
   },
   ecoTag: {
     ...typography.caption,
