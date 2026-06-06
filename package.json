@@ -6,6 +6,7 @@
   "scripts": {
     "start": "expo start",
     "web": "expo start --web",
+    "web:clear": "expo start --web --clear",
     "android": "expo start --android",
     "ios": "expo start --ios"
   },
