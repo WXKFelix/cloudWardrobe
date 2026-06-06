@@ -44,7 +44,7 @@ export function BrandMark({
     variant === 'image' ? (
       <Image
         source={require('@/assets/logo-mark.png')}
-        style={{ width: size * 1.15, height: size * 0.72 }}
+        style={[styles.logoImage, { width: size, height: size }]}
         resizeMode="contain"
         accessibilityLabel="云衣柜"
       />
@@ -68,6 +68,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     alignSelf: 'center',
+    backgroundColor: 'transparent',
+  },
+  logoImage: {
+    backgroundColor: 'transparent',
   },
   frame: {
     alignItems: 'center',

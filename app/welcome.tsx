@@ -12,7 +12,7 @@ const LOGO_VARIANT: 'image' | 'lockup' | 'icon' = 'image';
 export default function WelcomeScreen() {
   const router = useRouter();
   const { height } = useWindowDimensions();
-  const logoSize = height < 700 ? 64 : 72;
+  const logoSize = height < 700 ? 80 : 92;
 
   return (
     <ScreenContainer style={styles.container}>
