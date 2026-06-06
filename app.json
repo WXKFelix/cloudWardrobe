@@ -2,6 +2,7 @@
   "expo": {
     "name": "云衣柜",
     "slug": "cloud-wardrobe-ui",
+    "scheme": "cloud-wardrobe",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/adaptive-icon.png",
@@ -38,15 +39,14 @@
     "web": {
       "favicon": "./assets/favicon.png"
     },
-    "plugins": [
-      "expo-camera",
-      "expo-image-picker",
-      "expo-media-library"
-    ],
     "extra": {
       "eas": {
         "projectId": "4bd6e14d-6b3c-40cf-b411-d0d973b804b3"
       }
-    }
+    },
+    "plugins": [
+      "expo-asset",
+      "expo-font"
+    ]
   }
 }
