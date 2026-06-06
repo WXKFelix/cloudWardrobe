@@ -21,6 +21,7 @@ interface AppState {
   isAuthenticated: boolean;
   hasCompletedOnboarding: boolean;
   username: string;
+  avatarUri: string | null;
   userType: UserType | null;
   cloudQuota: number;
   cloudUsed: number;
@@ -43,12 +44,14 @@ interface AppState {
   redeemPoints: (cost: number) => boolean;
   updateSettings: (patch: Partial<AppSettings>) => void;
   cancelOrder: (orderId: string) => void;
+  setAvatar: (uri: string | null) => void;
 }
 
 export const useAppStore = create<AppState>((set, get) => ({
   isAuthenticated: false,
   hasCompletedOnboarding: false,
   username: '',
+  avatarUri: null,
   userType: null,
   cloudQuota: 50,
   cloudUsed: mockClothing.length,
@@ -91,6 +94,7 @@ export const useAppStore = create<AppState>((set, get) => ({
       isAuthenticated: false,
       hasCompletedOnboarding: false,
       username: '',
+      avatarUri: null,
       userType: null,
       todayOutfitIndex: 0,
       todayOutfitConfirmed: false,
@@ -120,6 +124,8 @@ export const useAppStore = create<AppState>((set, get) => ({
           : o
       ),
     })),
+
+  setAvatar: (uri) => set({ avatarUri: uri }),
 
   completeOnboarding: () => set({ hasCompletedOnboarding: true }),
 

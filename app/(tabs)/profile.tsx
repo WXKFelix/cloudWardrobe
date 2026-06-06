@@ -1,5 +1,6 @@
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
+import { AvatarPicker } from '@/components/AvatarPicker';
 import { ScreenContainer } from '@/components/ScreenContainer';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
@@ -17,7 +18,7 @@ const menuItems = [
 
 export default function ProfileScreen() {
   const router = useRouter();
-  const { username, userType, cloudUsed, cloudQuota, logout } = useAppStore();
+  const { username, avatarUri, userType, cloudUsed, cloudQuota, logout, setAvatar } = useAppStore();
   const quotaPercent = Math.round((cloudUsed / cloudQuota) * 100);
 
   const handleLogout = () => {
@@ -28,12 +29,16 @@ export default function ProfileScreen() {
   return (
     <ScreenContainer>
       <Card style={styles.profileCard}>
-        <View style={styles.avatar}>
-          <Text style={styles.avatarText}>{username?.[0]?.toUpperCase() || 'U'}</Text>
-        </View>
+        <AvatarPicker
+          uri={avatarUri}
+          fallbackText={username || 'U'}
+          onChange={setAvatar}
+          size={72}
+        />
         <View style={styles.profileInfo}>
           <Text style={styles.name}>{username || '用户'}</Text>
           <Text style={styles.type}>{userType ? userTypeLabels[userType] : '未设置'}</Text>
+          <Text style={styles.avatarHint}>点击头像可更换</Text>
         </View>
       </Card>
 
@@ -80,18 +85,10 @@ const styles = StyleSheet.create({
     marginTop: spacing.sm,
     marginBottom: spacing.md,
   },
-  avatar: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
-    backgroundColor: colors.primary,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  avatarText: { fontSize: 28, color: '#FFF', fontWeight: '700' },
   profileInfo: { flex: 1 },
   name: { ...typography.subtitle, color: colors.text },
   type: { ...typography.caption, color: colors.textSecondary, marginTop: 4 },
+  avatarHint: { ...typography.caption, color: colors.textMuted, marginTop: 6 },
   quotaCard: { marginBottom: spacing.lg },
   quotaHeader: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: spacing.sm },
   quotaTitle: { ...typography.label, color: colors.text },
