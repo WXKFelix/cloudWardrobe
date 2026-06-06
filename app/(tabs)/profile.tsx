@@ -1,6 +1,7 @@
+import { useRef } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
-import { AvatarPicker } from '@/components/AvatarPicker';
+import { AvatarPicker, AvatarPickerRef } from '@/components/AvatarPicker';
 import { ScreenContainer } from '@/components/ScreenContainer';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
@@ -18,6 +19,7 @@ const menuItems = [
 
 export default function ProfileScreen() {
   const router = useRouter();
+  const avatarRef = useRef<AvatarPickerRef>(null);
   const { username, avatarUri, userType, cloudUsed, cloudQuota, logout, setAvatar } = useAppStore();
   const quotaPercent = Math.round((cloudUsed / cloudQuota) * 100);
 
@@ -26,21 +28,31 @@ export default function ProfileScreen() {
     router.replace('/welcome');
   };
 
+  const openAvatarPicker = () => avatarRef.current?.open();
+
   return (
     <ScreenContainer>
-      <Card style={styles.profileCard}>
-        <AvatarPicker
-          uri={avatarUri}
-          fallbackText={username || 'U'}
-          onChange={setAvatar}
-          size={72}
-        />
-        <View style={styles.profileInfo}>
-          <Text style={styles.name}>{username || '用户'}</Text>
-          <Text style={styles.type}>{userType ? userTypeLabels[userType] : '未设置'}</Text>
-          <Text style={styles.avatarHint}>点击头像可更换</Text>
-        </View>
-      </Card>
+      <Pressable
+        onPress={openAvatarPicker}
+        style={({ pressed }) => [pressed && styles.profileCardPressed]}
+        accessibilityLabel="点击更换头像"
+        accessibilityRole="button"
+      >
+        <Card style={styles.profileCard}>
+          <AvatarPicker
+            ref={avatarRef}
+            uri={avatarUri}
+            fallbackText={username || 'U'}
+            onChange={setAvatar}
+            size={72}
+          />
+          <View style={styles.profileInfo}>
+            <Text style={styles.name}>{username || '用户'}</Text>
+            <Text style={styles.type}>{userType ? userTypeLabels[userType] : '未设置'}</Text>
+            <Text style={styles.avatarHint}>点击更换头像 ›</Text>
+          </View>
+        </Card>
+      </Pressable>
 
       <Pressable onPress={() => router.push('/profile/cloud-storage')}>
         <Card style={styles.quotaCard}>
@@ -85,10 +97,11 @@ const styles = StyleSheet.create({
     marginTop: spacing.sm,
     marginBottom: spacing.md,
   },
+  profileCardPressed: { opacity: 0.92 },
   profileInfo: { flex: 1 },
   name: { ...typography.subtitle, color: colors.text },
   type: { ...typography.caption, color: colors.textSecondary, marginTop: 4 },
-  avatarHint: { ...typography.caption, color: colors.textMuted, marginTop: 6 },
+  avatarHint: { ...typography.caption, color: colors.primary, marginTop: 6 },
   quotaCard: { marginBottom: spacing.lg },
   quotaHeader: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: spacing.sm },
   quotaTitle: { ...typography.label, color: colors.text },

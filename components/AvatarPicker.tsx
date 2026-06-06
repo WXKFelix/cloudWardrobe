@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { forwardRef, useImperativeHandle, useState } from 'react';
 import {
   Alert,
   Image,
@@ -14,31 +14,36 @@ import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import { colors, radius, spacing, typography } from '@/constants/theme';
 
+export interface AvatarPickerRef {
+  open: () => void;
+}
+
 interface AvatarPickerProps {
   uri: string | null;
   fallbackText: string;
   onChange: (uri: string | null) => void;
   size?: number;
   style?: ViewStyle;
+  showBadge?: boolean;
 }
 
-export function AvatarPicker({
-  uri,
-  fallbackText,
-  onChange,
-  size = 64,
-  style,
-}: AvatarPickerProps) {
+export const AvatarPicker = forwardRef<AvatarPickerRef, AvatarPickerProps>(function AvatarPicker(
+  { uri, fallbackText, onChange, size = 64, style, showBadge = true },
+  ref
+) {
   const [showActions, setShowActions] = useState(false);
   const [uploading, setUploading] = useState(false);
 
+  const open = () => setShowActions(true);
   const close = () => setShowActions(false);
 
+  useImperativeHandle(ref, () => ({ open }));
+
   const pickFromLibrary = async () => {
-    close();
     if (Platform.OS !== 'web') {
       const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
       if (status !== 'granted') {
+        close();
         Alert.alert('需要相册权限', '请在系统设置中允许访问相册');
         return;
       }
@@ -51,6 +56,8 @@ export function AvatarPicker({
       quality: 0.8,
     });
 
+    close();
+
     if (!result.canceled && result.assets[0]) {
       setUploading(true);
       onChange(result.assets[0].uri);
@@ -59,7 +66,6 @@ export function AvatarPicker({
   };
 
   const takePhoto = async () => {
-    close();
     if (Platform.OS === 'web') {
       await pickFromLibrary();
       return;
@@ -67,6 +73,7 @@ export function AvatarPicker({
 
     const { status } = await ImagePicker.requestCameraPermissionsAsync();
     if (status !== 'granted') {
+      close();
       Alert.alert('需要相机权限', '请在系统设置中允许访问相机');
       return;
     }
@@ -76,6 +83,8 @@ export function AvatarPicker({
       aspect: [1, 1],
       quality: 0.8,
     });
+
+    close();
 
     if (!result.canceled && result.assets[0]) {
       setUploading(true);
@@ -96,16 +105,30 @@ export function AvatarPicker({
       ? [{ key: 'camera', icon: 'camera-outline' as const, label: '拍照', onPress: takePhoto }]
       : []),
     ...(uri
-      ? [{ key: 'remove', icon: 'trash-outline' as const, label: '移除当前头像', onPress: removeAvatar, danger: true }]
+      ? [
+          {
+            key: 'remove',
+            icon: 'trash-outline' as const,
+            label: '移除当前头像',
+            onPress: removeAvatar,
+            danger: true,
+          },
+        ]
       : []),
   ];
 
   return (
     <>
       <Pressable
-        onPress={() => setShowActions(true)}
-        style={[styles.wrap, { width: size, height: size }, style]}
+        onPress={open}
+        style={({ pressed }) => [
+          styles.wrap,
+          { width: size, height: size },
+          pressed && styles.pressed,
+          style,
+        ]}
         accessibilityLabel="更换头像"
+        accessibilityRole="button"
       >
         {uri ? (
           <Image
@@ -119,26 +142,35 @@ export function AvatarPicker({
             </Text>
           </View>
         )}
-        <View style={styles.badge}>
-          <Ionicons name="camera" size={14} color="#FFF" />
-        </View>
+        {showBadge ? (
+          <View style={styles.badge}>
+            <Ionicons name="camera" size={14} color="#FFF" />
+          </View>
+        ) : null}
         {uploading ? (
-          <View style={[styles.overlay, { width: size, height: size, borderRadius: radiusSize }]}>
+          <View style={[styles.uploadOverlay, { width: size, height: size, borderRadius: radiusSize }]}>
             <Text style={styles.uploadingText}>上传中</Text>
           </View>
         ) : null}
       </Pressable>
 
-      <Modal visible={showActions} transparent animationType="fade" onRequestClose={close}>
-        <Pressable style={styles.overlayBg} onPress={close}>
-          <Pressable style={styles.sheet} onPress={(e) => e.stopPropagation()}>
+      <Modal
+        visible={showActions}
+        transparent
+        animationType="fade"
+        onRequestClose={close}
+        statusBarTranslucent
+      >
+        <View style={styles.modalRoot}>
+          <Pressable style={styles.overlayBg} onPress={close} />
+          <View style={styles.sheet}>
             <Text style={styles.sheetTitle}>更换头像</Text>
             <Text style={styles.sheetDesc}>支持 JPG / PNG，建议 1MB 以内</Text>
             {actions.map((action) => (
               <Pressable
                 key={action.key}
                 onPress={action.onPress}
-                style={styles.actionRow}
+                style={({ pressed }) => [styles.actionRow, pressed && styles.actionPressed]}
               >
                 <Ionicons
                   name={action.icon}
@@ -158,15 +190,16 @@ export function AvatarPicker({
             <Pressable onPress={close} style={styles.cancelBtn}>
               <Text style={styles.cancelText}>取消</Text>
             </Pressable>
-          </Pressable>
-        </Pressable>
+          </View>
+        </View>
       </Modal>
     </>
   );
-}
+});
 
 const styles = StyleSheet.create({
   wrap: { position: 'relative' },
+  pressed: { opacity: 0.85 },
   image: { backgroundColor: colors.surfaceMuted },
   fallback: {
     backgroundColor: colors.primary,
@@ -186,19 +219,23 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     borderWidth: 2,
     borderColor: colors.surface,
+    zIndex: 2,
   },
-  overlay: {
+  uploadOverlay: {
     ...StyleSheet.absoluteFillObject,
     backgroundColor: 'rgba(0,0,0,0.45)',
     alignItems: 'center',
     justifyContent: 'center',
+    zIndex: 3,
   },
   uploadingText: { ...typography.caption, color: '#FFF' },
-  overlayBg: {
+  modalRoot: {
     flex: 1,
-    backgroundColor: colors.overlay,
     justifyContent: 'flex-end',
-    padding: spacing.md,
+  },
+  overlayBg: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: colors.overlay,
   },
   sheet: {
     backgroundColor: colors.surface,
@@ -208,9 +245,16 @@ const styles = StyleSheet.create({
     maxWidth: 480,
     width: '100%',
     alignSelf: 'center',
+    margin: spacing.md,
+    zIndex: 10,
   },
   sheetTitle: { ...typography.subtitle, color: colors.text, textAlign: 'center' },
-  sheetDesc: { ...typography.caption, color: colors.textSecondary, textAlign: 'center', marginBottom: spacing.sm },
+  sheetDesc: {
+    ...typography.caption,
+    color: colors.textSecondary,
+    textAlign: 'center',
+    marginBottom: spacing.sm,
+  },
   actionRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -219,6 +263,7 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: colors.border,
   },
+  actionPressed: { backgroundColor: colors.surfaceMuted },
   actionLabel: { ...typography.body, color: colors.text },
   actionDanger: { color: colors.error },
   cancelBtn: {
