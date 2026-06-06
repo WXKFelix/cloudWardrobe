@@ -2,6 +2,7 @@ import { StyleSheet, Text, View } from 'react-native';
 import { ScreenContainer } from '@/components/ScreenContainer';
 import { OutfitCard } from '@/components/OutfitCard';
 import { Card } from '@/components/ui/Card';
+import { brand } from '@/constants/brand';
 import { mockFashionTips, mockReminders } from '@/constants/mockData';
 import { colors, radius, spacing, typography } from '@/constants/theme';
 import { getWardrobeOverview, outfitPresets, useAppStore } from '@/store/useAppStore';
@@ -19,10 +20,18 @@ export default function HomeScreen() {
 
   return (
     <ScreenContainer>
+      <View style={styles.ecoBanner}>
+        <Text style={styles.ecoBannerIcon}>🌿</Text>
+        <View style={styles.ecoBannerText}>
+          <Text style={styles.ecoBannerTitle}>{brand.ecoTagline}</Text>
+          <Text style={styles.ecoBannerDesc}>随性穿衣，减少浪费</Text>
+        </View>
+      </View>
+
       <View style={styles.header}>
         <View>
           <Text style={styles.greeting}>你好，{username || '用户'}</Text>
-          <Text style={styles.weather}>☀️ 北京 22°C 晴</Text>
+          <Text style={styles.weather}>☀️ 北京 22°C 晴 · 适宜轻薄穿搭</Text>
         </View>
         <View style={styles.bell}>
           <Text>🔔</Text>
@@ -54,7 +63,7 @@ export default function HomeScreen() {
       </View>
 
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>⚠️ 提醒</Text>
+        <Text style={styles.sectionTitle}>🌱 绿色提醒</Text>
         {mockReminders.map((r) => (
           <View key={r.id} style={styles.reminder}>
             <Text style={styles.reminderText}>· {r.text}</Text>
@@ -76,6 +85,22 @@ export default function HomeScreen() {
 }
 
 const styles = StyleSheet.create({
+  ecoBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+    backgroundColor: colors.ecoMuted,
+    borderRadius: radius.lg,
+    padding: spacing.md,
+    marginTop: spacing.sm,
+    marginBottom: spacing.md,
+    borderWidth: 1,
+    borderColor: colors.techBorder,
+  },
+  ecoBannerIcon: { fontSize: 28 },
+  ecoBannerText: { flex: 1 },
+  ecoBannerTitle: { ...typography.label, color: colors.primary },
+  ecoBannerDesc: { ...typography.caption, color: colors.textSecondary, marginTop: 2 },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -106,9 +131,11 @@ const styles = StyleSheet.create({
   statCount: { ...typography.title, color: colors.primary },
   statLabel: { ...typography.caption, color: colors.textSecondary },
   reminder: {
-    backgroundColor: '#FFF8E8',
+    backgroundColor: colors.warningBg,
     padding: spacing.md,
     borderRadius: radius.md,
+    borderLeftWidth: 3,
+    borderLeftColor: colors.eco,
   },
   reminderText: { ...typography.body, color: colors.text },
   tipCard: { marginBottom: spacing.sm },

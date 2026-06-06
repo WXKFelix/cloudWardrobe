@@ -169,7 +169,7 @@ const styles = StyleSheet.create({
     borderColor: colors.border,
     alignItems: 'center',
   },
-  modeBtnActive: { borderColor: colors.primary, backgroundColor: '#F0FAFA' },
+  modeBtnActive: { borderColor: colors.tech, backgroundColor: colors.ecoMuted },
   modeText: { ...typography.label, color: colors.textSecondary },
   modeTextActive: { color: colors.primary },
   photoCard: { marginBottom: spacing.md },

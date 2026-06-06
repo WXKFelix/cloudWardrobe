@@ -104,7 +104,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     position: 'relative',
   },
-  todayCell: { backgroundColor: '#E8F4F4', borderRadius: 8 },
+  todayCell: { backgroundColor: colors.ecoMuted, borderRadius: 8 },
   checkedCell: {},
   dayText: { ...typography.caption, color: colors.text },
   checkedText: { color: colors.primary, fontWeight: '700' },
@@ -127,7 +127,7 @@ const styles = StyleSheet.create({
   rankName: { ...typography.body, color: colors.text, flex: 1 },
   rankCount: { ...typography.caption, color: colors.textSecondary },
   idleRow: {
-    backgroundColor: '#FFF8E8',
+    backgroundColor: colors.warningBg,
     padding: spacing.md,
     borderRadius: 8,
     marginBottom: spacing.sm,

@@ -74,7 +74,7 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     borderColor: colors.border,
   },
-  optionActive: { borderColor: colors.primary, backgroundColor: '#F0FAFA' },
+  optionActive: { borderColor: colors.tech, backgroundColor: colors.ecoMuted },
   emoji: { fontSize: 32 },
   optionText: { flex: 1 },
   optionTitle: { ...typography.label, color: colors.text },

@@ -122,7 +122,7 @@ const styles = StyleSheet.create({
   currentBadge: {
     ...typography.caption,
     color: colors.primary,
-    backgroundColor: '#E8F4F4',
+    backgroundColor: colors.ecoMuted,
     paddingHorizontal: 8,
     paddingVertical: 2,
     borderRadius: radius.full,

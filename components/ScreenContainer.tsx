@@ -1,5 +1,6 @@
 import { ScrollView, StyleSheet, View, ViewStyle } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { EcoBackground } from '@/components/EcoBackground';
 import { colors, spacing } from '@/constants/theme';
 
 interface ScreenContainerProps {
@@ -19,22 +20,21 @@ export function ScreenContainer({
     <View style={[padded && styles.padded, style]}>{children}</View>
   );
 
-  if (!scroll) {
-    return (
-      <SafeAreaView style={styles.safe} edges={['top']}>
-        {content}
-      </SafeAreaView>
-    );
-  }
+  const body = scroll ? (
+    <ScrollView
+      contentContainerStyle={[styles.scroll, padded && styles.padded, style]}
+      showsVerticalScrollIndicator={false}
+    >
+      {children}
+    </ScrollView>
+  ) : (
+    content
+  );
 
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
-      <ScrollView
-        contentContainerStyle={[styles.scroll, padded && styles.padded, style]}
-        showsVerticalScrollIndicator={false}
-      >
-        {children}
-      </ScrollView>
+      <EcoBackground />
+      {body}
     </SafeAreaView>
   );
 }

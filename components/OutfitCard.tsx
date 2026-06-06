@@ -23,8 +23,8 @@ export function OutfitCard({
   onRefresh,
 }: OutfitCardProps) {
   return (
-    <Card style={styles.card}>
-      <Text style={styles.badge}>今日穿搭推荐</Text>
+    <Card glow style={styles.card}>
+      <Text style={styles.badge}>✨ AI 今日穿搭</Text>
       <Text style={styles.title}>{title}</Text>
       <View style={styles.emojiRow}>
         {emojis.map((emoji, i) => (
@@ -54,8 +54,8 @@ const styles = StyleSheet.create({
   card: { gap: spacing.md },
   badge: {
     ...typography.caption,
-    color: colors.primary,
-    backgroundColor: '#E8F4F4',
+    color: colors.primaryDark,
+    backgroundColor: colors.techGlow,
     alignSelf: 'flex-start',
     paddingHorizontal: 10,
     paddingVertical: 4,

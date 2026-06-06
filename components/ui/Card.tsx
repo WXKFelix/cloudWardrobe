@@ -1,9 +1,13 @@
 import { StyleSheet, View, ViewProps } from 'react-native';
-import { colors, radius, spacing } from '@/constants/theme';
+import { colors, radius, shadows, spacing } from '@/constants/theme';
 
-export function Card({ style, children, ...props }: ViewProps) {
+interface CardProps extends ViewProps {
+  glow?: boolean;
+}
+
+export function Card({ style, children, glow, ...props }: CardProps) {
   return (
-    <View style={[styles.card, style]} {...props}>
+    <View style={[styles.card, glow && styles.cardGlow, style]} {...props}>
       {children}
     </View>
   );
@@ -11,15 +15,15 @@ export function Card({ style, children, ...props }: ViewProps) {
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: colors.surface,
+    backgroundColor: colors.surfaceGlass,
     borderRadius: radius.lg,
     padding: spacing.md,
     borderWidth: 1,
-    borderColor: colors.border,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.06,
-    shadowRadius: 8,
-    elevation: 2,
+    borderColor: colors.borderLight,
+    ...shadows.card,
+  },
+  cardGlow: {
+    borderColor: colors.techBorder,
+    ...shadows.glow,
   },
 });

@@ -68,7 +68,7 @@ const styles = StyleSheet.create({
   statusBadge: {
     ...typography.caption,
     color: colors.warning,
-    backgroundColor: '#FFF8E8',
+    backgroundColor: colors.warningBg,
     paddingHorizontal: 6,
     paddingVertical: 2,
     borderRadius: radius.sm,
