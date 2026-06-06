@@ -10,8 +10,11 @@ Expo 跨端 UI 原型（Web / iOS / Android）
 git checkout cursor/ui-interactive-prototype-6952
 git pull origin cursor/ui-interactive-prototype-6952
 npm install
-npm run web
+npm run web:diagnose   # 先诊断
+npm run web:clear      # 再启动
 ```
+
+**访问地址：http://localhost:19006**
 
 ## 关于 `npm run web` 一直“停在那里”
 
@@ -41,25 +44,66 @@ Logs for your project will appear below.
 
 ## 常见问题
 
+### Windows：一直卡在 `Starting Metro Bundler`（最常见）
+
+按顺序 **完整执行**（不要跳步）：
+
+```powershell
+# 0. 强烈建议使用 Node 20 LTS（Node 22 在 Windows 上极易卡 Metro）
+node -v
+# 若是 v22.x，请安装 Node 20: https://nodejs.org/en/download
+
+# 1. 拉最新代码
+cd D:\Code\cloudWardrobe-ui
+git pull origin cursor/ui-interactive-prototype-6952
+
+# 2. 彻底清理
+taskkill /F /IM node.exe
+Remove-Item -Recurse -Force node_modules, .expo -ErrorAction SilentlyContinue
+
+# 3. 重新安装
+npm install
+
+# 4. 诊断（必须全部 ✅）
+npm run web:diagnose
+
+# 5. 清缓存启动（耐心等待 1~3 分钟）
+npm run web:clear
+```
+
+**成功标志**（按顺序出现）：
+
+```
+Starting Metro Bundler
+Waiting on http://localhost:19006    ← 出现这行说明已启动
+Web Bundled xxxx ms ...                ← 出现这行说明可以打开浏览器
+```
+
+浏览器访问：**http://localhost:19006**
+
+---
+
+### 备用方案：不用 Metro 开发服务器（若上面仍卡住）
+
+直接打包成静态网页预览（更稳定）：
+
+```powershell
+npm run web:preview
+```
+
+然后打开 **http://localhost:19006**（每次改代码需重新运行）
+
+---
+
 ### 一直加载、不出现访问地址
 
 **常见原因：`assets/` 图片损坏**（仅 8 字节的假 PNG 会导致 Metro 卡住）。
 
-拉取最新代码后重新安装：
+拉取最新代码后 assets 应 > 500 字节。
 
-```powershell
-git pull origin cursor/ui-interactive-prototype-6952
-npm install
-npm run web:clear
-```
+---
 
-启动时会 **立即打印** 访问地址：
-
-```
->>> http://localhost:19006 <<<
-```
-
-### Windows：`Port 8081 is being used` / 启动后直接回到命令行
+### Windows：端口被占用 / 启动后直接回到命令行
 
 通常是 **上次 Expo 没关干净**，端口被残留 `node.exe` 占用。
 
@@ -110,9 +154,11 @@ npx expo start --web --port 19007
 
 | 命令 | 说明 |
 |------|------|
-| `npm run web` | 启动 Web 开发服务器（端口 19006，常驻） |
-| `npm run web:clear` | 清缓存后启动（排查打包问题） |
-| `npm run kill-ports` | Windows：清理 8081/19006 等占用端口 |
+| `npm run web:diagnose` | 启动前诊断（Node/资源/配置） |
+| `npm run web` | 启动 Web 开发服务器（端口 19006） |
+| `npm run web:clear` | 清缓存后启动（排查卡死首选） |
+| `npm run web:preview` | 静态打包预览（Metro 卡死时的备用方案） |
+| `npm run kill-ports` | Windows：清理占用端口 |
 | `npm run start` | Expo 通用启动（可选平台） |
 
 ## 文档
