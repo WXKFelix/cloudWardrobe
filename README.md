@@ -38,9 +38,41 @@ Logs for your project will appear below.
 
 ## 访问地址
 
-默认 Web 端口已改为 **19006**（避免与常见工具抢占 8081）：
-
 **http://localhost:19006**
+
+---
+
+## ⚠️ Node 版本要求（必读）
+
+| 你的版本 | 结果 |
+|----------|------|
+| **v20.x LTS** | ✅ 推荐，完美运行 |
+| v18 / v22 | ⚠️ 可用，建议换 20 |
+| **v23 / v24** | ❌ **Expo 不支持，Metro 会卡在 Starting Metro Bundler** |
+
+### Windows 切换 Node 版本（nvm-windows）
+
+```powershell
+# 1. 安装 nvm-windows（若未安装）
+# 下载: https://github.com/coreybutler/nvm-windows/releases
+
+# 2. 安装并启用 Node 20
+nvm install 20
+nvm use 20
+
+# 3. 确认版本
+node -v
+# 应显示 v20.x.x
+
+# 4. 回到项目重新安装依赖
+cd D:\Code\cloudWardrobe-ui
+taskkill /F /IM node.exe
+Remove-Item -Recurse -Force node_modules, .expo -ErrorAction SilentlyContinue
+npm install
+npm run web:clear
+```
+
+> 不想用 nvm？直接从 https://nodejs.org 下载 **20 LTS** 安装包，装完后重启终端。
 
 ## 常见问题
 
@@ -49,9 +81,10 @@ Logs for your project will appear below.
 按顺序 **完整执行**（不要跳步）：
 
 ```powershell
-# 0. 强烈建议使用 Node 20 LTS（Node 22 在 Windows 上极易卡 Metro）
+# 0. 【必做】检查 Node 版本 — v24/v23 会导致 Metro 永久卡死！
 node -v
-# 若是 v22.x，请安装 Node 20: https://nodejs.org/en/download
+# 必须是 v18 / v20 / v22，推荐 v20 LTS
+# 你当前若是 v24.x，请按下方「切换 Node 版本」操作
 
 # 1. 拉最新代码
 cd D:\Code\cloudWardrobe-ui

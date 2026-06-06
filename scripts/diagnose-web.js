@@ -13,13 +13,16 @@ function fail(msg) {
   checks.push({ ok: false, msg });
 }
 
-// Node 版本
-const major = parseInt(process.version.slice(1), 10);
-if (major >= 18 && major <= 20) ok(`Node ${process.version}（推荐 LTS）`);
-else if (major >= 18) {
-  ok(`Node ${process.version}（可用，若卡顿请换 Node 20 LTS）`);
-  console.warn('⚠️  提示: Node 22 在 Windows 上可能导致 Metro 长时间卡在 Starting Metro Bundler');
-}
+// Node 版本 — Expo SDK 52 官方支持 18~22，Node 24 会导致 Metro 卡死
+const major = parseInt(process.version.slice(1).split('.')[0], 10);
+if (major === 20) ok(`Node ${process.version}（推荐，完美兼容）`);
+else if (major === 18 || major === 22)
+  ok(`Node ${process.version}（可用，推荐换 20 LTS 更稳）`);
+else if (major >= 23)
+  fail(
+    `Node ${process.version} 过新！Expo 52 不支持 Node 24+，Metro 会卡在 Starting Metro Bundler。请降级到 Node 20 LTS`
+  );
+else if (major >= 18) ok(`Node ${process.version}`);
 else fail(`Node ${process.version} 过低，需要 >= 18`);
 
 // expo 存在

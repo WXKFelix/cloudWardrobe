@@ -21,7 +21,15 @@ console.log('========================================');
 console.log('  云衣柜 Cloud Wardrobe - Web 开发服务器');
 console.log('========================================');
 console.log('');
+const nodeMajor = parseInt(process.version.slice(1).split('.')[0], 10);
 console.log(`  Node 版本: ${process.version}`);
+if (nodeMajor >= 23) {
+  console.log('');
+  console.log('  ⚠️  警告: Node 24+ 不受 Expo 支持，Metro 极易卡死！');
+  console.log('  请安装 Node 20 LTS: https://nodejs.org/en/download');
+  console.log('  或使用 nvm-windows: nvm install 20 && nvm use 20');
+  console.log('');
+}
 console.log(`  项目路径: ${projectRoot}`);
 console.log('');
 console.log('  启动后请在浏览器打开：');
