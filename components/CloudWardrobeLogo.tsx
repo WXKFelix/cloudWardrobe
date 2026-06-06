@@ -8,42 +8,51 @@ interface CloudWardrobeLogoProps {
   style?: ViewStyle;
 }
 
-/**
- * 云衣柜品牌标识 — 极简图形标（对标主流 App 欢迎页 icon mark）
- * 云 + 衣架 + T 恤，单一线条体系，无多余装饰
- */
+/** 云衣柜品牌标识 — 图形在 viewBox 内几何居中 */
 export function CloudWardrobeLogo({ size = 64, style }: CloudWardrobeLogoProps) {
   return (
     <View style={[styles.wrap, { width: size, height: size }, style]}>
-      <Svg width={size} height={size} viewBox="0 0 96 96" fill="none">
+      <Svg
+        width={size}
+        height={size}
+        viewBox="0 0 96 96"
+        fill="none"
+        style={styles.svg}
+      >
         <Defs>
-          <LinearGradient id="cwMark" x1="20" y1="16" x2="76" y2="80">
+          <LinearGradient id="cwMark" x1="24" y1="18" x2="72" y2="78">
             <Stop offset="0%" stopColor={colors.primaryLight} />
             <Stop offset="100%" stopColor={colors.primary} />
           </LinearGradient>
         </Defs>
 
         <G stroke="url(#cwMark)" strokeLinecap="round" strokeLinejoin="round">
-          {/* 衣架 */}
+          {/* 衣架 — 以 x=48 为轴对称 */}
           <Path
-            d="M48 22c0-4 3-6 6-4 2 1 3 3 2 5l-1 4"
-            strokeWidth="2.8"
+            d="M48 18 C48 12 54 12 54 18 L54 22"
+            strokeWidth="2.6"
             fill="none"
           />
-          <Path d="M34 34h28" strokeWidth="2.8" />
+          <Path d="M36 30 H60" strokeWidth="2.6" />
 
-          {/* 云朵 */}
+          {/* 云朵 — 左右对称 */}
           <Path
-            d="M30 54c0-10 8-18 18-18 2-8 12-12 20-8 10-2 18 6 18 16 8 2 12 10 10 18-2 10-12 16-22 16H36c-10 0-18-8-16-18 1-4 4-6 10-6z"
-            strokeWidth="2.6"
+            d="M26 58
+               C26 44 38 34 48 34
+               C58 34 70 44 70 58
+               C78 58 82 66 78 74
+               C74 82 62 86 48 86
+               C34 86 22 82 18 74
+               C14 66 18 58 26 58 Z"
+            strokeWidth="2.5"
             fill={colors.ecoMuted}
             fillOpacity={0.55}
           />
 
-          {/* T 恤 */}
+          {/* T 恤 — 居中 */}
           <Path
-            d="M48 40l10 6 4-3 4 14-6 2v16H40V59l-6-2 4-14 4 3 6-6z"
-            strokeWidth="2.4"
+            d="M48 38 L56 42 L60 40 L64 56 L56 58 L56 72 H40 L40 58 L32 56 L36 40 L40 42 Z"
+            strokeWidth="2.3"
             fill={colors.surface}
           />
         </G>
@@ -56,5 +65,9 @@ const styles = StyleSheet.create({
   wrap: {
     alignItems: 'center',
     justifyContent: 'center',
+    alignSelf: 'center',
+  },
+  svg: {
+    display: 'flex',
   },
 });
