@@ -1,5 +1,6 @@
 import { StyleSheet, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
+import { CloudWardrobeLogo } from '@/components/CloudWardrobeLogo';
 import { ScreenContainer } from '@/components/ScreenContainer';
 import { Button } from '@/components/ui/Button';
 import { brand } from '@/constants/brand';
@@ -11,12 +12,11 @@ export default function WelcomeScreen() {
   return (
     <ScreenContainer scroll={false} style={styles.container}>
       <View style={styles.hero}>
-        <View style={styles.logoOuter}>
-          <View style={styles.logoCircle}>
-            <Text style={styles.logoEmoji}>🌿</Text>
-          </View>
-          <View style={styles.techRing} />
+        <View style={styles.logoStage}>
+          <View style={styles.logoScanLine} />
+          <CloudWardrobeLogo size={172} />
         </View>
+
         <Text style={styles.ecoTag}>{brand.ecoTagline}</Text>
         <Text style={styles.brand}>{brand.name}</Text>
         <Text style={styles.slogan}>{brand.slogan}</Text>
@@ -50,33 +50,32 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     justifyContent: 'space-between',
-    paddingTop: spacing.xl,
+    paddingTop: spacing.lg,
     paddingBottom: spacing.xl,
   },
   hero: { alignItems: 'center', gap: spacing.xs },
-  logoOuter: { position: 'relative', marginBottom: spacing.md },
-  logoCircle: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
-    backgroundColor: colors.ecoMuted,
+  logoStage: {
+    position: 'relative',
     alignItems: 'center',
     justifyContent: 'center',
-    borderWidth: 2,
-    borderColor: colors.techBorder,
-  },
-  techRing: {
-    position: 'absolute',
-    top: -8,
-    left: -8,
-    right: -8,
-    bottom: -8,
-    borderRadius: 58,
+    marginBottom: spacing.sm,
+    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.lg,
+    backgroundColor: colors.surfaceGlass,
+    borderRadius: radius.xl,
     borderWidth: 1,
-    borderColor: colors.tech,
-    opacity: 0.35,
+    borderColor: colors.techBorder,
+    overflow: 'hidden',
   },
-  logoEmoji: { fontSize: 44 },
+  logoScanLine: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    top: '42%',
+    height: 1,
+    backgroundColor: colors.tech,
+    opacity: 0.2,
+  },
   ecoTag: {
     ...typography.caption,
     color: colors.tech,
@@ -87,9 +86,10 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
     fontWeight: '600',
     letterSpacing: 1,
+    marginTop: spacing.xs,
   },
   brand: { ...typography.hero, color: colors.primary, marginTop: spacing.sm },
-  slogan: { ...typography.subtitle, color: colors.text },
+  slogan: { ...typography.subtitle, color: colors.text, marginTop: spacing.xs },
   sloganSub: { ...typography.body, color: colors.tech, fontWeight: '600' },
   mission: {
     ...typography.caption,
@@ -99,7 +99,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.lg,
     lineHeight: 20,
   },
-  features: { gap: spacing.sm, marginVertical: spacing.lg },
+  features: { gap: spacing.sm, marginVertical: spacing.md },
   featureRow: {
     flexDirection: 'row',
     alignItems: 'center',
