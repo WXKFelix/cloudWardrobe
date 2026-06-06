@@ -69,13 +69,8 @@ const env = {
   ...process.env,
   REACT_NATIVE_PACKAGER_HOSTNAME: '127.0.0.1',
   EXPO_NO_TELEMETRY: '1',
-  // Windows: 减少 Metro 文件扫描范围，避免卡死
-  ...(process.platform === 'win32'
-    ? {
-        EXPO_USE_METRO_WORKSPACE_ROOT: '1',
-        CI: 'false',
-      }
-    : {}),
+  // Windows: 避免 CI 模式限制交互；workspace root 已由 Expo 默认开启，勿再设 EXPO_USE_METRO_WORKSPACE_ROOT
+  ...(process.platform === 'win32' ? { CI: 'false' } : {}),
 };
 
 const child = spawn(process.execPath, expoArgs, {
