@@ -1,4 +1,4 @@
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { colors, radius, shadows, spacing, typography } from '@/constants/theme';
@@ -22,10 +22,12 @@ export function ScreenHeader({ title, onBack, showBack = true }: ScreenHeaderPro
           accessibilityRole="button"
           accessibilityLabel="返回"
         >
-          <View style={styles.backIconWrap}>
-            <Ionicons name="chevron-back" size={18} color={colors.primary} />
+          <View style={styles.backContent}>
+            <View style={styles.backIconWrap}>
+              <Ionicons name="chevron-back" size={16} color={colors.primary} style={styles.backIcon} />
+            </View>
+            <Text style={styles.backText}>返回</Text>
           </View>
-          <Text style={styles.backText}>返回</Text>
         </Pressable>
       ) : null}
       <Text style={styles.title}>{title}</Text>
@@ -33,32 +35,48 @@ export function ScreenHeader({ title, onBack, showBack = true }: ScreenHeaderPro
   );
 }
 
+const BACK_BTN_HEIGHT = 40;
+
 const styles = StyleSheet.create({
   header: { marginBottom: spacing.lg, marginTop: spacing.sm },
   backBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
     alignSelf: 'flex-start',
-    gap: 6,
     marginBottom: spacing.md,
-    paddingVertical: 6,
-    paddingRight: 14,
-    paddingLeft: 6,
+    height: BACK_BTN_HEIGHT,
+    paddingHorizontal: 12,
     backgroundColor: colors.surface,
     borderRadius: radius.full,
     borderWidth: 1,
     borderColor: colors.techBorder,
+    justifyContent: 'center',
     ...shadows.card,
   },
   backBtnPressed: { opacity: 0.88, transform: [{ scale: 0.97 }] },
-  backIconWrap: {
-    width: 30,
-    height: 30,
-    borderRadius: 15,
-    backgroundColor: colors.ecoMuted,
+  backContent: {
+    flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
+    height: BACK_BTN_HEIGHT,
   },
-  backText: { ...typography.label, color: colors.primary, fontSize: 15 },
+  backIconWrap: {
+    width: 20,
+    height: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: colors.ecoMuted,
+    borderRadius: 10,
+  },
+  backIcon: {
+    // chevron 字形左侧留白较多，微调使视觉居中
+    marginLeft: Platform.OS === 'ios' ? -2 : -1,
+  },
+  backText: {
+    marginLeft: 6,
+    fontSize: 15,
+    fontWeight: '600',
+    lineHeight: 20,
+    color: colors.primary,
+    ...(Platform.OS === 'android' ? { includeFontPadding: false, textAlignVertical: 'center' } : {}),
+  },
   title: { ...typography.title, color: colors.text },
 });
