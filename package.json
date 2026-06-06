@@ -5,8 +5,10 @@
   "main": "expo-router/entry",
   "scripts": {
     "start": "expo start",
-    "web": "expo start --web",
-    "web:clear": "expo start --web --clear",
+    "web": "expo start --web --port 19006",
+    "web:clear": "expo start --web --port 19006 --clear",
+    "web:8081": "expo start --web --port 8081",
+    "kill-ports": "powershell -ExecutionPolicy Bypass -File scripts/kill-expo-ports.ps1",
     "android": "expo start --android",
     "ios": "expo start --ios"
   },
