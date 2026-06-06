@@ -13,11 +13,12 @@ import {
   useAppStore,
 } from '@/store/useAppStore';
 
-const categoryIcons: Record<string, keyof typeof Ionicons.glyphMap> = {
-  top: 'shirt-outline',
-  bottom: 'body-outline',
-  shoes: 'footsteps-outline',
-  outerwear: 'cloudy-outline',
+/** 衣橱分类图标 — 与中文标签语义一致 */
+const categoryEmojis: Record<string, string> = {
+  top: '👔',
+  bottom: '👖',
+  shoes: '👟',
+  outerwear: '🧥',
 };
 
 export default function HomeScreen() {
@@ -75,11 +76,7 @@ export default function HomeScreen() {
           {stats.categories.map((cat) => (
             <View key={cat.key} style={styles.statCard}>
               <View style={styles.statIconWrap}>
-                <Ionicons
-                  name={categoryIcons[cat.key] ?? 'ellipse-outline'}
-                  size={18}
-                  color={colors.primary}
-                />
+                <Text style={styles.statEmoji}>{categoryEmojis[cat.key] ?? '👕'}</Text>
               </View>
               <Text style={styles.statCount}>{cat.count}</Text>
               <Text style={styles.statLabel}>{cat.label}</Text>
@@ -187,6 +184,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     marginBottom: 6,
   },
+  statEmoji: { fontSize: 17, lineHeight: 20 },
   statCount: {
     fontSize: 20,
     fontWeight: '700',
