@@ -1,25 +1,30 @@
 import { StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 import { useRouter } from 'expo-router';
-import { CloudWardrobeLogo } from '@/components/CloudWardrobeLogo';
+import { BrandMark } from '@/components/BrandMark';
 import { ScreenContainer } from '@/components/ScreenContainer';
 import { Button } from '@/components/ui/Button';
 import { brand } from '@/constants/brand';
 import { colors, radius, spacing, typography } from '@/constants/theme';
 
+/** 切换 Logo 展示：'image' | 'lockup' | 'icon' */
+const LOGO_VARIANT: 'image' | 'lockup' | 'icon' = 'image';
+
 export default function WelcomeScreen() {
   const router = useRouter();
   const { height } = useWindowDimensions();
-  const iconSize = height < 700 ? 52 : 60;
+  const logoSize = height < 700 ? 64 : 72;
 
   return (
     <ScreenContainer style={styles.container}>
       <View style={styles.hero}>
-        <View style={[styles.iconHalo, { width: iconSize + 28, height: iconSize + 28 }]}>
-          <CloudWardrobeLogo size={iconSize} />
-        </View>
+        <BrandMark variant={LOGO_VARIANT} size={logoSize} showFrame={false} />
 
-        <Text style={styles.brand}>{brand.name}</Text>
-        <Text style={styles.brandEn}>{brand.nameEn}</Text>
+        {LOGO_VARIANT !== 'lockup' ? (
+          <>
+            <Text style={styles.brand}>{brand.name}</Text>
+            <Text style={styles.brandEn}>{brand.nameEn}</Text>
+          </>
+        ) : null}
 
         <View style={styles.tagRow}>
           <Text style={styles.ecoTag}>{brand.ecoTagline}</Text>
@@ -63,21 +68,6 @@ const styles = StyleSheet.create({
     gap: 6,
     paddingTop: spacing.xs,
   },
-  iconHalo: {
-    alignSelf: 'center',
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderRadius: 999,
-    backgroundColor: colors.surface,
-    borderWidth: 1,
-    borderColor: colors.borderLight,
-    marginBottom: spacing.sm,
-    shadowColor: colors.primaryDark,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.06,
-    shadowRadius: 8,
-    elevation: 2,
-  },
   brand: {
     width: '100%',
     fontSize: 30,
@@ -86,6 +76,7 @@ const styles = StyleSheet.create({
     color: colors.text,
     letterSpacing: 1,
     textAlign: 'center',
+    marginTop: spacing.xs,
   },
   brandEn: {
     ...typography.caption,
@@ -96,7 +87,6 @@ const styles = StyleSheet.create({
     color: colors.textMuted,
     textTransform: 'uppercase',
     textAlign: 'center',
-    marginTop: 2,
   },
   tagRow: {
     width: '100%',
