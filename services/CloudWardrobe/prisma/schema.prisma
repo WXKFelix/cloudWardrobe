@@ -1,0 +1,482 @@
+// CloudWardrobe — PostgreSQL schema
+// Aligned with cloud-wardrobe-ui prototype (cursor/ui-interactive-prototype-6952)
+// and docs/03-技术架构方案.md
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ---------------------------------------------------------------------------
+// Enums
+// ---------------------------------------------------------------------------
+
+enum UserType {
+  student
+  worker
+  family
+}
+
+enum ClothingCategory {
+  top
+  bottom
+  shoes
+  outerwear
+  accessory
+}
+
+enum ClothingStatus {
+  normal
+  washing
+  in_storage
+  repair
+  donate
+  wearing
+  donated
+  disposed
+}
+
+enum OutfitSlot {
+  top
+  bottom
+  shoes
+  outerwear
+  accessory
+}
+
+enum OrderType {
+  storage
+  pickup
+  care
+}
+
+enum OrderStatus {
+  pending
+  processing
+  shipping
+  completed
+  cancelled
+}
+
+enum ReminderType {
+  warning
+  info
+}
+
+enum FeedbackStatus {
+  open
+  in_progress
+  resolved
+  closed
+}
+
+enum StatusLogOperator {
+  user
+  system
+  warehouse
+}
+
+// ---------------------------------------------------------------------------
+// Users & auth
+// ---------------------------------------------------------------------------
+
+model User {
+  id                      String    @id @default(uuid()) @db.Uuid
+  username                String    @unique @db.VarChar(64)
+  passwordHash            String    @map("password_hash") @db.VarChar(255)
+  email                   String?   @unique @db.VarChar(255)
+  phone                   String?   @unique @db.VarChar(20)
+  userType                UserType? @map("user_type")
+  avatarUrl               String?   @map("avatar_url")
+  cloudQuota              Int       @default(50) @map("cloud_quota")
+  onboardingCompletedAt   DateTime? @map("onboarding_completed_at") @db.Timestamptz(6)
+  createdAt               DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt               DateTime  @updatedAt @map("updated_at") @db.Timestamptz(6)
+  deletedAt               DateTime? @map("deleted_at") @db.Timestamptz(6)
+
+  settings           UserSettings?
+  membership         Membership?
+  refreshTokens      RefreshToken[]
+  clothingItems      ClothingItem[]
+  dailyRecommendations DailyRecommendation[]
+  outfitRecords      OutfitRecord[]
+  serviceOrders      ServiceOrder[]
+  ecoReminders       EcoReminder[]
+  feedbacks          Feedback[]
+  pointTransactions  PointTransaction[]
+
+  @@index([userType])
+  @@index([deletedAt])
+  @@map("users")
+}
+
+model UserSettings {
+  userId       String   @id @map("user_id") @db.Uuid
+  notifyOutfit Boolean  @default(true) @map("notify_outfit")
+  notifyPromo  Boolean  @default(true) @map("notify_promo")
+  notifyOrder  Boolean  @default(true) @map("notify_order")
+  darkMode     Boolean  @default(false) @map("dark_mode")
+  privacyShare Boolean  @default(false) @map("privacy_share")
+  updatedAt    DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("user_settings")
+}
+
+model RefreshToken {
+  id        String    @id @default(uuid()) @db.Uuid
+  userId    String    @map("user_id") @db.Uuid
+  tokenHash String    @map("token_hash") @db.VarChar(255)
+  expiresAt DateTime  @map("expires_at") @db.Timestamptz(6)
+  revokedAt DateTime? @map("revoked_at") @db.Timestamptz(6)
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([expiresAt])
+  @@map("refresh_tokens")
+}
+
+// ---------------------------------------------------------------------------
+// Membership & cloud plans
+// ---------------------------------------------------------------------------
+
+model CloudPlan {
+  id          String  @id @db.VarChar(32)
+  name        String  @db.VarChar(64)
+  quota       Int
+  priceCents  Int     @default(0) @map("price_cents")
+  description String?
+  isActive    Boolean @default(true) @map("is_active")
+  sortOrder   Int     @default(0) @map("sort_order")
+
+  memberships        Membership[]
+  membershipBenefits MembershipBenefit[]
+
+  @@map("cloud_plans")
+}
+
+model Membership {
+  userId    String    @id @map("user_id") @db.Uuid
+  planId    String    @default("free") @map("plan_id") @db.VarChar(32)
+  points    Int       @default(0)
+  expiresAt DateTime? @map("expires_at") @db.Timestamptz(6)
+  updatedAt DateTime  @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  user User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  plan CloudPlan @relation(fields: [planId], references: [id])
+
+  @@map("memberships")
+}
+
+model PointTransaction {
+  id           String   @id @default(uuid()) @db.Uuid
+  userId       String   @map("user_id") @db.Uuid
+  amount       Int
+  balanceAfter Int      @map("balance_after")
+  reason       String   @db.VarChar(64)
+  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt(sort: Desc)])
+  @@map("point_transactions")
+}
+
+model MembershipBenefit {
+  id          String  @id @default(uuid()) @db.Uuid
+  planId      String? @map("plan_id") @db.VarChar(32)
+  icon        String  @db.VarChar(8)
+  title       String  @db.VarChar(64)
+  description String
+  sortOrder   Int     @default(0) @map("sort_order")
+  isActive    Boolean @default(true) @map("is_active")
+
+  plan CloudPlan? @relation(fields: [planId], references: [id], onDelete: SetNull)
+
+  @@index([planId, sortOrder])
+  @@map("membership_benefits")
+}
+
+// ---------------------------------------------------------------------------
+// Wardrobe (clothing items)
+// ---------------------------------------------------------------------------
+
+model ClothingItem {
+  id            String           @id @default(uuid()) @db.Uuid
+  userId        String           @map("user_id") @db.Uuid
+  name          String           @db.VarChar(128)
+  category      ClothingCategory
+  colorName     String           @map("color_name") @db.VarChar(32)
+  colorHex      String           @map("color_hex") @db.Char(7)
+  season        String           @default("四季") @db.VarChar(16)
+  occasion      String           @default("日常") @db.VarChar(16)
+  status        ClothingStatus   @default(normal)
+  wearCount     Int              @default(0) @map("wear_count")
+  lastWornAt    DateTime?        @map("last_worn_at") @db.Timestamptz(6)
+  thumbnailUrl  String?          @map("thumbnail_url")
+  imageUrl      String?          @map("image_url")
+  brand         String?          @db.VarChar(64)
+  purchaseDate  DateTime?        @map("purchase_date") @db.Date
+  priceCents    Int?             @map("price_cents")
+  uniqueLabelId String?          @map("unique_label_id") @db.VarChar(64)
+  warehouseId   String?          @map("warehouse_id") @db.Uuid
+  createdAt     DateTime         @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt     DateTime         @updatedAt @map("updated_at") @db.Timestamptz(6)
+  deletedAt     DateTime?        @map("deleted_at") @db.Timestamptz(6)
+
+  user                    User                     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  warehouse               Warehouse?               @relation(fields: [warehouseId], references: [id], onDelete: SetNull)
+  images                  ClothingImage[]
+  tags                    ClothingItemTag[]
+  statusLogs              ClothingStatusLog[]
+  dailyRecommendationItems DailyRecommendationItem[]
+  outfitRecordItems       OutfitRecordItem[]
+  orderItems              OrderItem[]
+
+  @@index([userId, deletedAt])
+  @@index([userId, category])
+  @@index([userId, status])
+  @@index([userId, wearCount(sort: Desc)])
+  @@index([lastWornAt])
+  @@map("clothing_items")
+}
+
+model ClothingImage {
+  id             String   @id @default(uuid()) @db.Uuid
+  clothingItemId String   @map("clothing_item_id") @db.Uuid
+  url            String
+  sortOrder      Int      @default(0) @map("sort_order")
+  createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  clothingItem ClothingItem @relation(fields: [clothingItemId], references: [id], onDelete: Cascade)
+
+  @@index([clothingItemId, sortOrder])
+  @@map("clothing_images")
+}
+
+model ClothingTag {
+  id   String @id @default(uuid()) @db.Uuid
+  name String @unique @db.VarChar(32)
+
+  items ClothingItemTag[]
+
+  @@map("clothing_tags")
+}
+
+model ClothingItemTag {
+  clothingItemId String @map("clothing_item_id") @db.Uuid
+  tagId        String @map("tag_id") @db.Uuid
+
+  clothingItem ClothingItem @relation(fields: [clothingItemId], references: [id], onDelete: Cascade)
+  tag          ClothingTag  @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@id([clothingItemId, tagId])
+  @@map("clothing_item_tags")
+}
+
+model ClothingStatusLog {
+  id             String           @id @default(uuid()) @db.Uuid
+  clothingItemId String           @map("clothing_item_id") @db.Uuid
+  fromStatus     ClothingStatus?  @map("from_status")
+  toStatus       ClothingStatus   @map("to_status")
+  operator       StatusLogOperator @default(user)
+  note           String?
+  createdAt      DateTime         @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  clothingItem ClothingItem @relation(fields: [clothingItemId], references: [id], onDelete: Cascade)
+
+  @@index([clothingItemId, createdAt(sort: Desc)])
+  @@map("clothing_status_logs")
+}
+
+// ---------------------------------------------------------------------------
+// Outfit recommendations & records
+// ---------------------------------------------------------------------------
+
+model DailyRecommendation {
+  id              String    @id @default(uuid()) @db.Uuid
+  userId          String    @map("user_id") @db.Uuid
+  recommendDate   DateTime  @map("recommend_date") @db.Date
+  sequence        Int       @default(0)
+  title           String    @db.VarChar(64)
+  description     String?
+  weatherSnapshot Json?     @map("weather_snapshot") @db.JsonB
+  isConfirmed     Boolean   @default(false) @map("is_confirmed")
+  confirmedAt     DateTime? @map("confirmed_at") @db.Timestamptz(6)
+  createdAt       DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  user          User                      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  items         DailyRecommendationItem[]
+  outfitRecords OutfitRecord[]
+
+  @@unique([userId, recommendDate, sequence])
+  @@index([userId, recommendDate(sort: Desc)])
+  @@map("daily_recommendations")
+}
+
+model DailyRecommendationItem {
+  recommendationId String     @map("recommendation_id") @db.Uuid
+  clothingItemId   String     @map("clothing_item_id") @db.Uuid
+  slot             OutfitSlot
+
+  recommendation DailyRecommendation @relation(fields: [recommendationId], references: [id], onDelete: Cascade)
+  clothingItem   ClothingItem        @relation(fields: [clothingItemId], references: [id], onDelete: Cascade)
+
+  @@id([recommendationId, slot])
+  @@map("daily_recommendation_items")
+}
+
+model OutfitRecord {
+  id               String   @id @default(uuid()) @db.Uuid
+  userId           String   @map("user_id") @db.Uuid
+  outfitDate       DateTime @map("outfit_date") @db.Date
+  recommendationId String?  @map("recommendation_id") @db.Uuid
+  title            String?  @db.VarChar(64)
+  notes            String?
+  createdAt        DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  user           User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  recommendation DailyRecommendation? @relation(fields: [recommendationId], references: [id], onDelete: SetNull)
+  items          OutfitRecordItem[]
+
+  @@unique([userId, outfitDate])
+  @@index([userId, outfitDate(sort: Desc)])
+  @@map("outfit_records")
+}
+
+model OutfitRecordItem {
+  outfitRecordId String     @map("outfit_record_id") @db.Uuid
+  clothingItemId String     @map("clothing_item_id") @db.Uuid
+  slot           OutfitSlot
+
+  outfitRecord OutfitRecord @relation(fields: [outfitRecordId], references: [id], onDelete: Cascade)
+  clothingItem ClothingItem @relation(fields: [clothingItemId], references: [id], onDelete: Cascade)
+
+  @@id([outfitRecordId, slot])
+  @@map("outfit_record_items")
+}
+
+// ---------------------------------------------------------------------------
+// Service orders (storage / pickup / care)
+// ---------------------------------------------------------------------------
+
+model Warehouse {
+  id        String   @id @default(uuid()) @db.Uuid
+  name      String   @db.VarChar(128)
+  city      String?  @db.VarChar(64)
+  address   String?
+  isActive  Boolean  @default(true) @map("is_active")
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  clothingItems ClothingItem[]
+  serviceOrders ServiceOrder[]
+
+  @@map("warehouses")
+}
+
+model ServiceOrder {
+  id           String      @id @default(uuid()) @db.Uuid
+  orderNo      String      @unique @map("order_no") @db.VarChar(32)
+  userId       String      @map("user_id") @db.Uuid
+  type         OrderType
+  title        String      @db.VarChar(128)
+  status       OrderStatus @default(pending)
+  amountCents  Int         @map("amount_cents")
+  trackingNo   String?     @map("tracking_no") @db.VarChar(64)
+  warehouseId  String?     @map("warehouse_id") @db.Uuid
+  createdAt    DateTime    @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt    DateTime    @updatedAt @map("updated_at") @db.Timestamptz(6)
+  cancelledAt  DateTime?   @map("cancelled_at") @db.Timestamptz(6)
+
+  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  warehouse Warehouse? @relation(fields: [warehouseId], references: [id], onDelete: SetNull)
+  items     OrderItem[]
+
+  @@index([userId, createdAt(sort: Desc)])
+  @@index([userId, status])
+  @@index([userId, type])
+  @@map("service_orders")
+}
+
+model OrderItem {
+  id               String   @id @default(uuid()) @db.Uuid
+  orderId          String   @map("order_id") @db.Uuid
+  clothingItemId   String?  @map("clothing_item_id") @db.Uuid
+  itemNameSnapshot String   @map("item_name_snapshot") @db.VarChar(128)
+  createdAt        DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  order        ServiceOrder  @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  clothingItem ClothingItem? @relation(fields: [clothingItemId], references: [id], onDelete: SetNull)
+
+  @@index([orderId])
+  @@map("order_items")
+}
+
+// ---------------------------------------------------------------------------
+// Content & feedback
+// ---------------------------------------------------------------------------
+
+model EcoReminder {
+  id        String       @id @default(uuid()) @db.Uuid
+  userId    String       @map("user_id") @db.Uuid
+  text      String
+  type      ReminderType
+  ruleCode  String?      @map("rule_code") @db.VarChar(32)
+  isRead    Boolean      @default(false) @map("is_read")
+  createdAt DateTime     @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, isRead, createdAt(sort: Desc)])
+  @@map("eco_reminders")
+}
+
+model FashionTip {
+  id          String    @id @default(uuid()) @db.Uuid
+  title       String    @db.VarChar(128)
+  description String
+  coverUrl    String?   @map("cover_url")
+  publishedAt DateTime? @map("published_at") @db.Timestamptz(6)
+  isActive    Boolean   @default(true) @map("is_active")
+  sortOrder   Int       @default(0) @map("sort_order")
+  createdAt   DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  @@index([isActive, sortOrder])
+  @@map("fashion_tips")
+}
+
+model Feedback {
+  id        String         @id @default(uuid()) @db.Uuid
+  userId    String?        @map("user_id") @db.Uuid
+  category  String         @db.VarChar(32)
+  content   String
+  contact   String?        @db.VarChar(128)
+  status    FeedbackStatus @default(open)
+  createdAt DateTime       @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime       @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  user        User?                @relation(fields: [userId], references: [id], onDelete: SetNull)
+  attachments FeedbackAttachment[]
+
+  @@index([status, createdAt(sort: Desc)])
+  @@map("feedbacks")
+}
+
+model FeedbackAttachment {
+  id         String   @id @default(uuid()) @db.Uuid
+  feedbackId String   @map("feedback_id") @db.Uuid
+  url        String
+  createdAt  DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  feedback Feedback @relation(fields: [feedbackId], references: [id], onDelete: Cascade)
+
+  @@index([feedbackId])
+  @@map("feedback_attachments")
+}
