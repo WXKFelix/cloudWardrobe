@@ -2,13 +2,16 @@
 
 ## Project overview
 
-**云衣柜 (Cloud Wardrobe)** is an Expo / React Native mobile app (`cloud-wardrobe-ui`) for managing a digital wardrobe with camera and photo-library integration. The repo ships Expo config in `app.json` and EAS profiles in `eas.json`.
+**量化人生 (Quantified Life)** is an Expo / React Native app for tracking life trajectory (A→B→C), daily alignment check-ins, and structured decision support at key nodes (MVP: job offer).
+
+Product and design docs: `docs/product/PRD.md`, `docs/development/README.md`, `docs/design/UI-SPEC.md`.
 
 ## Tech stack
 
 - **Expo SDK 56** with React Native 0.85 and React 19
-- **TypeScript** entry at `index.ts`, UI in `App.tsx`
-- **Plugins (configured):** `expo-camera`, `expo-image-picker`, `expo-media-library`
+- **expo-router** for navigation
+- **expo-sqlite** for local persistence
+- **TypeScript** strict; path alias `@/*` → `src/*`
 
 ## Common commands
 
@@ -16,32 +19,19 @@
 |------|---------|
 | Install deps | `npm install` |
 | Start Metro (all platforms) | `npm start` |
-| Web dev server | `npm run web` |
-| Android | `npm run android` |
-| iOS | `npm run ios` (macOS + simulator or Expo Go) |
+| Web dev server | `CI=1 npx expo start --web --port 8081` |
 | Typecheck | `npx tsc --noEmit` |
 
-There is no ESLint, Prettier, or test runner configured in this repo yet.
+There is no ESLint, Prettier, or test runner configured yet.
 
 ## Cursor Cloud specific instructions
 
-### Services
+- Prefer **web** for verification: `CI=1 npx expo start --web --port 8081`
+- Browser tab title should read **量化人生**.
+- Run Metro in a **tmux** session.
+- MVP uses local SQLite; web SQLite support is enabled via expo-sqlite.
 
-| Service | Required? | Notes |
-|---------|-----------|-------|
-| Expo Metro (`npm start` / `npm run web`) | **Yes** | Bundles the app; web is the easiest path in Cloud VMs |
-| Expo Go / dev client / simulator | Optional | Needed for native camera flows on device |
-| Backend API | **No** | Not present in this repo |
+## Repo notes
 
-### Running in Cloud VMs
-
-- Prefer **web** for quick verification: `CI=1 npx expo start --web --port 8081`
-- Bind to port **8081** (Expo default). The app title in the browser tab should read **云衣柜**.
-- Native camera and full media-library behavior require a physical device or emulator; web supports image picking via the browser file dialog (see `App.tsx`).
-- Run Metro in a **tmux** session so it stays up across agent turns.
-- After changing dependencies, restart Metro; hot reload usually picks up TS/TSX edits but not always `app.json` plugin changes.
-
-### Repo notes
-
-- `app.json` references `assets/splash.png` and `assets/favicon.png`; both are present under `assets/`.
-- EAS CLI (`>= 16.13.3`) is required only for cloud builds (`eas build`), not for local Metro dev.
+- Entry: `expo-router/entry` (`app/` directory).
+- EAS CLI is only required for cloud builds (`eas build`).
