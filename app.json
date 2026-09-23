@@ -1,7 +1,7 @@
 {
   "expo": {
     "name": "云衣柜",
-    "slug": "cloud-wardrobe-ui",
+    "slug": "cloud-wardrobe",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/adaptive-icon.png",

@@ -50,7 +50,7 @@ Phase 0          Phase 1           Phase 2            Phase 3
 
 ### 技术交付物
 
-- [ ] `cloud-wardrobe-ui`：Expo App 可安装运行
+- [ ] `cloudWardrobe`：Expo App 可安装运行
 - [ ] `CloudWardrobe`：NestJS 后端 + PostgreSQL
 - [ ] Docker Compose 本地开发环境
 - [ ] 核心 API 文档（Swagger）
