@@ -3,7 +3,7 @@
 **版本**：v1.0  
 **状态**：草案  
 **后端项目**：CloudWardrobe  
-**前端项目**：cloud-wardrobe-ui
+**前端项目**：cloudWardrobe
 
 ---
 
@@ -209,7 +209,7 @@
 
 | 维度 | 选型 |
 |------|------|
-| 前端 | Expo (React Native) — `cloud-wardrobe-ui` |
+| 前端 | Expo (React Native) — `cloudWardrobe` |
 | 后端 | Node.js + NestJS — `CloudWardrobe` |
 | 数据库 | PostgreSQL |
 | 对象存储 | 阿里云 OSS / AWS S3 |

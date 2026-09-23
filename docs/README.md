@@ -8,7 +8,7 @@
 |------|----------|------|
 | 产品品牌 | 云衣柜 | 面向用户的品牌名 |
 | 后端服务 | **CloudWardrobe** | API、业务逻辑、数据存储 |
-| 前端应用 | **cloud-wardrobe-ui** | Expo / React Native 跨端 App（iOS / Android / Web） |
+| 前端应用 | **cloudWardrobe** | Expo / React Native 跨端 App（iOS / Android / Web） |
 | 当前开发分支 | **cursor/ui-interactive-prototype-6952** | UI 原型代码所在分支（未合并 master） |
 
 ## 文档目录

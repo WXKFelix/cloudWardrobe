@@ -1,4 +1,4 @@
-# 云衣柜 · cloud-wardrobe-ui
+# 云衣柜 · cloudWardrobe
 
 Expo 跨端 UI 原型（Web / iOS / Android）
 
@@ -75,7 +75,7 @@ node -v
 5. **回到项目重装依赖并启动**：
 
 ```powershell
-cd D:\Code\cloudWardrobe-ui
+cd D:\Code\cloudWardrobe
 taskkill /F /IM node.exe 2>$null
 Remove-Item -Recurse -Force node_modules, .expo -ErrorAction SilentlyContinue
 Remove-Item package-lock.json -ErrorAction SilentlyContinue
@@ -105,7 +105,7 @@ node -v
 # 你当前若是 v24.x，请按下方「切换 Node 版本」操作
 
 # 1. 拉最新代码
-cd D:\Code\cloudWardrobe-ui
+cd D:\Code\cloudWardrobe
 git pull origin cursor/ui-interactive-prototype-6952
 
 # 2. 彻底清理
