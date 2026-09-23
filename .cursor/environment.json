@@ -1,0 +1,7 @@
+{
+  "name": "cloudWardrobe + Gauge deps",
+  "repositoryDependencies": [
+    "github.com/WXKFelix/cloudWardrobe",
+    "github.com/WXKFelix/Gauge"
+  ]
+}
