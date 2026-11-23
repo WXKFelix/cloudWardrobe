@@ -68,7 +68,7 @@ export default function ClothingDetailScreen() {
       </Card>
 
       {item.category === 'top' && item.imageUri ? (
-        <ClothingTryOn key={item.id} garmentImage={item.tryOnImageUri ?? item.imageUri} />
+        <ClothingTryOn key={item.id} garments={[{ category: 'top', image: item.tryOnImageUri ?? item.imageUri }]} />
       ) : null}
 
       <View style={styles.actions}>

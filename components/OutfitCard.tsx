@@ -9,6 +9,7 @@ interface OutfitCardProps {
   description: string;
   items: ClothingItem[];
   canRefresh: boolean;
+  previewCount: number;
   onPreview?: () => void;
   onAdd: () => void;
   confirmed?: boolean;
@@ -21,6 +22,7 @@ export function OutfitCard({
   description,
   items,
   canRefresh,
+  previewCount,
   onPreview,
   onAdd,
   confirmed,
@@ -57,9 +59,9 @@ export function OutfitCard({
             <Button title="换一套 ↻" onPress={onRefresh} disabled={!canRefresh} variant="outline" style={styles.refreshBtn} />
           </View>
           {onPreview ? (
-            <Button title="上身预览 · 单件上衣" onPress={onPreview} variant="outline" />
+            <Button title={previewCount === items.length ? `搭配试穿 · ${previewCount} 件` : `试穿有照片的 ${previewCount} 件`} onPress={onPreview} variant="outline" />
           ) : (
-            <Text style={styles.itemName}>搭配中有带照片的上衣时可预览上身效果。</Text>
+            <Text style={styles.itemName}>拍摄衣物照片后即可试穿。</Text>
           )}
         </>
       ) : (

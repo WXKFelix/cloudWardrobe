@@ -36,9 +36,24 @@ async function readImages(request: IncomingMessage) {
     throw new RequestError(400, '请求格式有误。');
   }
 
-  const { personImage, garmentImage } = body ?? {};
-  return { person: validateImage(personImage), garment: validateImage(garmentImage) };
+  const { personImage, garmentImage, garments } = body ?? {};
+  const references: unknown = garments ?? [{ category: 'top', image: garmentImage }];
+  if (!Array.isArray(references) || references.length < 1 || references.length > 3) {
+    throw new RequestError(400, '请选择 1 至 3 件衣物。');
+  }
+  const categories = new Set<string>();
+  const items = references.map((item) => {
+    const category: unknown = item?.category;
+    if (typeof category !== 'string' || !Object.hasOwn(garmentLabels, category) || categories.has(category)) {
+      throw new RequestError(400, '搭配中的衣物类型无效或重复。');
+    }
+    categories.add(category);
+    return { category: category as keyof typeof garmentLabels, image: validateImage(item.image) };
+  });
+  return { person: validateImage(personImage), items };
 }
+
+const garmentLabels = { top: '上衣', outerwear: '外套', bottom: '裤子', shoes: '鞋子' } as const;
 
 function validateImage(value: unknown): string {
   if (typeof value !== 'string' || !imagePattern.test(value)) {
@@ -75,7 +90,20 @@ interface ImageEditResponse extends DashScopeResponse {
 }
 
 async function generateTryOn(images: Awaited<ReturnType<typeof readImages>>, signal: AbortSignal, trace: FailureTrace) {
-  enterStage(trace, 'edit-image');
+  const base = await editImage(images.person, images.items.slice(0, 2), signal, trace);
+  return images.items.length > 2
+    ? editImage(base, images.items.slice(2), signal, trace)
+    : base;
+}
+
+async function editImage(
+  person: string,
+  garments: Awaited<ReturnType<typeof readImages>>['items'],
+  signal: AbortSignal,
+  trace: FailureTrace,
+) {
+  const references = garments.map((item, index) => `第 ${index + 1} 张图是参考${garmentLabels[item.category]}`).join('，');
+  enterStage(trace, `edit-${garments.map((item) => item.category).join('-')}`);
   const response = await fetch(`${modelBaseUrl}/services/aigc/multimodal-generation/generation`, {
     method: 'POST',
     redirect: 'error',
@@ -86,9 +114,9 @@ async function generateTryOn(images: Awaited<ReturnType<typeof readImages>>, sig
         messages: [{
           role: 'user',
           content: [
-            { image: images.person },
-            { image: images.garment },
-            { text: '以第一张人像为底图，仅将人物上衣替换为第二张图中的真实上衣。保持人物面部、体型、姿势、下装、背景和构图，尽量还原参考上衣的剪裁、颜色、材质、印花和细节。生成一张自然的上身预览照片。' },
+            ...garments.map((item) => ({ image: item.image })),
+            { image: person },
+            { text: `${references}。以最后一张人物照片为底图，把人物身上对应部位全部换成各参考图里的衣物。保留人物的脸、体型、姿势、背景、画面比例和其他衣物。尽量还原参考图的款式、颜色和细节。输出一张自然的试穿照片。` },
           ],
         }],
       },

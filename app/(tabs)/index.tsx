@@ -4,7 +4,7 @@ import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { ScreenContainer } from '@/components/ScreenContainer';
 import { SectionHeader } from '@/components/SectionHeader';
-import { ClothingTryOn } from '@/components/ClothingTryOn';
+import { ClothingTryOn, type TryOnGarment } from '@/components/ClothingTryOn';
 import { OutfitCard } from '@/components/OutfitCard';
 import { Card } from '@/components/ui/Card';
 import { mockFashionTips, mockReminders } from '@/constants/mockData';
@@ -25,7 +25,7 @@ const categoryEmojis: Record<string, string> = {
 
 export default function HomeScreen() {
   const router = useRouter();
-  const [previewItemId, setPreviewItemId] = useState<string>();
+  const [openPreviewKey, setOpenPreviewKey] = useState<string>();
   const clothing = useAppStore((s) => s.clothing);
   const todayOutfitIndex = useAppStore((s) => s.todayOutfitIndex);
   const todayOutfitConfirmed = useAppStore((s) => s.todayOutfitConfirmed);
@@ -35,8 +35,11 @@ export default function HomeScreen() {
 
   const stats = getWardrobeOverview(clothing);
   const outfit = getOutfitRecommendation(clothing, todayOutfitIndex);
-  const previewTop = outfit.items.find((item) => item.category === 'top' && item.imageUri);
-  const previewImage = previewTop?.tryOnImageUri ?? previewTop?.imageUri;
+  const previewGarments = outfit.items.flatMap<TryOnGarment>((item) => {
+    const image = item.tryOnImageUri ?? item.imageUri;
+    return image && item.category !== 'accessory' ? [{ category: item.category, image }] : [];
+  });
+  const previewKey = outfit.items.map(({ id }) => id).join(':');
 
   const hour = new Date().getHours();
   const greeting = hour < 12 ? '早上好' : hour < 18 ? '下午好' : '晚上好';
@@ -68,16 +71,17 @@ export default function HomeScreen() {
         onConfirm={confirmOutfit}
         canRefresh={outfit.count > 1}
         onRefresh={() => {
-          setPreviewItemId(undefined);
+          setOpenPreviewKey(undefined);
           refreshOutfit();
         }}
         onAdd={() => router.push('/(tabs)/add')}
-        onPreview={previewTop ? () => {
-          setPreviewItemId(previewItemId === previewTop.id ? undefined : previewTop.id);
+        previewCount={previewGarments.length}
+        onPreview={previewGarments.length ? () => {
+          setOpenPreviewKey(openPreviewKey === previewKey ? undefined : previewKey);
         } : undefined}
       />
-      {previewTop && previewImage && previewItemId === previewTop.id ? (
-        <ClothingTryOn key={previewTop.id} garmentImage={previewImage} />
+      {previewGarments.length > 0 && openPreviewKey === previewKey ? (
+        <ClothingTryOn key={previewKey} garments={previewGarments} outfit />
       ) : null}
 
       <View style={styles.section}>

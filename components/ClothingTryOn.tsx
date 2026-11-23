@@ -8,7 +8,12 @@ import { colors, spacing, typography } from '@/constants/theme';
 const apiUrl = process.env.EXPO_PUBLIC_TRY_ON_API_URL || 'http://localhost:8787';
 const supportedImage = /^data:image\/(jpeg|png|webp);base64,/i;
 
-export function ClothingTryOn({ garmentImage }: { garmentImage: string }) {
+export interface TryOnGarment {
+  category: 'top' | 'outerwear' | 'bottom' | 'shoes';
+  image: string;
+}
+
+export function ClothingTryOn({ garments, outfit = false }: { garments: TryOnGarment[]; outfit?: boolean }) {
   const [personImage, setPersonImage] = useState<string>();
   const [resultImage, setResultImage] = useState<string>();
   const [error, setError] = useState('');
@@ -45,8 +50,8 @@ export function ClothingTryOn({ garmentImage }: { garmentImage: string }) {
 
   const generate = async () => {
     if (!personImage || request.current) return;
-    if (!supportedImage.test(garmentImage)) {
-      setError('请用 JPG、PNG 或 WebP 格式重新录入这件上衣。');
+    if (garments.some(({ image }) => !supportedImage.test(image))) {
+      setError('请用 JPG、PNG 或 WebP 格式重新录入对应衣物。');
       return;
     }
     setError('');
@@ -58,7 +63,7 @@ export function ClothingTryOn({ garmentImage }: { garmentImage: string }) {
       const response = await fetch(`${apiUrl.replace(/\/$/, '')}/try-on`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ personImage, garmentImage }),
+        body: JSON.stringify({ personImage, garments }),
         signal: controller.signal,
       });
       const data = await response.json();
@@ -77,8 +82,8 @@ export function ClothingTryOn({ garmentImage }: { garmentImage: string }) {
 
   return (
     <Card style={styles.card}>
-      <Text style={styles.title}>上身预览</Text>
-      <Text style={styles.hint}>选择一张你自己的正面照，尽量拍全肩部和上半身。</Text>
+      <Text style={styles.title}>{outfit ? '搭配试穿' : '上身预览'}</Text>
+      <Text style={styles.hint}>{outfit ? '选择一张本人正面全身照，确保头部和鞋子都在画面内。' : '选择一张你自己的正面照，尽量拍全肩部和上半身。'}</Text>
       <Button
         title={personImage ? '更换本人照片' : '选择本人照片'}
         onPress={() => void choosePhoto()}
@@ -90,7 +95,7 @@ export function ClothingTryOn({ garmentImage }: { garmentImage: string }) {
           <Image source={{ uri: personImage }} style={styles.image} resizeMode="contain" accessibilityLabel="本人照片" />
           <Text style={styles.hint}>点击生成后，本人照片和衣物照片将发送给阿里云百炼进行图像编辑。</Text>
           <Button
-            title={busy ? '处理中…' : '生成上身预览'}
+            title={busy ? '处理中…' : outfit ? '生成搭配预览' : '生成上身预览'}
             onPress={() => void generate()}
             disabled={busy}
           />
