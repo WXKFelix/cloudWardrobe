@@ -23,7 +23,7 @@ const colorOptions = [
 export default function AddScreen() {
   const router = useRouter();
   const addClothing = useAppStore((s) => s.addClothing);
-  const cloudUsed = useAppStore((s) => s.cloudUsed);
+  const cloudUsed = useAppStore((s) => s.clothing.length);
   const cloudQuota = useAppStore((s) => s.cloudQuota);
   const [mode, setMode] = useState<'photo' | 'manual'>('photo');
   const [name, setName] = useState('');

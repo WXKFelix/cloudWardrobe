@@ -2,7 +2,7 @@ import { StyleSheet, Text, View } from 'react-native';
 import { ScreenContainer } from '@/components/ScreenContainer';
 import { Card } from '@/components/ui/Card';
 import { colors, spacing, typography } from '@/constants/theme';
-import { useAppStore } from '@/store/useAppStore';
+import { daysSinceWorn, localDateKey, useAppStore } from '@/store/useAppStore';
 
 export default function RecordsScreen() {
   const outfitDays = useAppStore((s) => s.outfitDays);
@@ -14,8 +14,9 @@ export default function RecordsScreen() {
   const daysInMonth = new Date(year, month + 1, 0).getDate();
   const firstDay = new Date(year, month, 1).getDay();
 
-  const topWorn = [...clothing].sort((a, b) => b.wearCount - a.wearCount).slice(0, 3);
-  const idle = clothing.filter((c) => c.lastWornDaysAgo >= 30);
+  const monthDays = outfitDays.filter((day) => day.startsWith(localDateKey(today).slice(0, 7)));
+  const topWorn = clothing.filter((item) => item.wearCount > 0).sort((a, b) => b.wearCount - a.wearCount).slice(0, 3);
+  const idle = clothing.map((item) => ({ item, days: daysSinceWorn(item.lastWornAt, today) })).filter(({ days }) => days >= 30);
 
   return (
     <ScreenContainer>
@@ -38,7 +39,7 @@ export default function RecordsScreen() {
           ))}
           {Array.from({ length: daysInMonth }).map((_, i) => {
             const day = i + 1;
-            const checked = outfitDays.includes(day);
+            const checked = monthDays.includes(localDateKey(new Date(year, month, day)));
             const isToday = day === today.getDate();
             return (
               <View
@@ -55,7 +56,7 @@ export default function RecordsScreen() {
 
       <View style={styles.statsRow}>
         <Card style={styles.statBox}>
-          <Text style={styles.statNum}>{outfitDays.length}</Text>
+          <Text style={styles.statNum}>{monthDays.length}</Text>
           <Text style={styles.statLabel}>本月穿搭</Text>
         </Card>
         <Card style={styles.statBox}>
@@ -65,6 +66,7 @@ export default function RecordsScreen() {
       </View>
 
       <Text style={styles.sectionTitle}>最常穿 TOP 3</Text>
+      {topWorn.length === 0 ? <Text style={styles.subtitle}>完成第一次穿搭打卡后，这里会显示穿着排行。</Text> : null}
       {topWorn.map((item, i) => (
         <View key={item.id} style={styles.rankRow}>
           <Text style={styles.rank}>{i + 1}</Text>
@@ -77,10 +79,10 @@ export default function RecordsScreen() {
       {idle.length > 0 ? (
         <>
           <Text style={[styles.sectionTitle, { marginTop: spacing.lg }]}>闲置提醒</Text>
-          {idle.map((item) => (
+          {idle.map(({ item, days }) => (
             <View key={item.id} style={styles.idleRow}>
               <Text style={styles.idleText}>
-                {item.emoji} {item.name} — {item.lastWornDaysAgo} 天未穿
+                {item.emoji} {item.name} — {days} 天未穿
               </Text>
             </View>
           ))}

@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { categoryLabels } from '@/constants/mockData';
 import { colors, radius, spacing, typography } from '@/constants/theme';
-import { useAppStore } from '@/store/useAppStore';
+import { daysSinceWorn, useAppStore } from '@/store/useAppStore';
 
 export default function ClothingDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -23,6 +23,7 @@ export default function ClothingDetailScreen() {
     );
   }
 
+  const daysSinceLastWear = daysSinceWorn(item.lastWornAt);
   const rows = [
     { label: '类别', value: categoryLabels[item.category] },
     { label: '颜色', value: item.color },
@@ -32,11 +33,11 @@ export default function ClothingDetailScreen() {
     {
       label: '上次穿着',
       value:
-        item.lastWornDaysAgo < 0
+        daysSinceLastWear < 0
           ? '尚未穿着'
-          : item.lastWornDaysAgo === 0
+          : daysSinceLastWear === 0
             ? '今天'
-            : `${item.lastWornDaysAgo} 天前`,
+            : `${daysSinceLastWear} 天前`,
     },
   ];
 

@@ -1,11 +1,9 @@
 import { create } from 'zustand';
 import {
   ClothingItem,
+  categoryLabels,
   Order,
   UserType,
-  mockClothing,
-  mockOrders,
-  mockOutfitDays,
 } from '@/constants/mockData';
 
 export interface AppSettings {
@@ -23,22 +21,20 @@ interface AppState {
   avatarUri: string | null;
   userType: UserType | null;
   cloudQuota: number;
-  cloudUsed: number;
   membershipLevel: 'free' | 'standard' | 'premium';
   points: number;
   orders: Order[];
   settings: AppSettings;
   clothing: ClothingItem[];
-  outfitDays: number[];
+  outfitDays: string[];
   todayOutfitIndex: number;
-  todayOutfitConfirmed: boolean;
   login: (username: string) => void;
   register: (username: string, userType: UserType) => void;
   logout: () => void;
   completeOnboarding: () => void;
   refreshOutfit: () => void;
   confirmOutfit: () => void;
-  addClothing: (item: Omit<ClothingItem, 'id' | 'wearCount' | 'lastWornDaysAgo' | 'status'>) => void;
+  addClothing: (item: Omit<ClothingItem, 'id' | 'wearCount' | 'lastWornAt' | 'status'>) => void;
   expandCloudQuota: (quota: number, level: 'free' | 'standard' | 'premium') => void;
   redeemPoints: (cost: number) => boolean;
   updateSettings: (patch: Partial<AppSettings>) => void;
@@ -53,10 +49,9 @@ export const useAppStore = create<AppState>((set, get) => ({
   avatarUri: null,
   userType: null,
   cloudQuota: 50,
-  cloudUsed: mockClothing.length,
   membershipLevel: 'free',
-  points: 320,
-  orders: mockOrders,
+  points: 0,
+  orders: [],
   settings: {
     notifyOutfit: true,
     notifyPromo: true,
@@ -64,10 +59,9 @@ export const useAppStore = create<AppState>((set, get) => ({
     darkMode: false,
     privacyShare: false,
   },
-  clothing: mockClothing,
-  outfitDays: mockOutfitDays,
+  clothing: [],
+  outfitDays: [],
   todayOutfitIndex: 0,
-  todayOutfitConfirmed: false,
 
   login: (username) =>
     set({
@@ -75,7 +69,6 @@ export const useAppStore = create<AppState>((set, get) => ({
       hasCompletedOnboarding: true,
       username,
       userType: 'worker',
-      cloudUsed: mockClothing.length,
     }),
 
   register: (username, userType) =>
@@ -84,8 +77,9 @@ export const useAppStore = create<AppState>((set, get) => ({
       hasCompletedOnboarding: false,
       username,
       userType,
-      cloudUsed: 0,
       clothing: [],
+      outfitDays: [],
+      todayOutfitIndex: 0,
     }),
 
   logout: () =>
@@ -95,11 +89,13 @@ export const useAppStore = create<AppState>((set, get) => ({
       username: '',
       avatarUri: null,
       userType: null,
+      clothing: [],
+      outfitDays: [],
+      cloudQuota: 50,
       todayOutfitIndex: 0,
-      todayOutfitConfirmed: false,
       membershipLevel: 'free',
-      points: 320,
-      orders: mockOrders,
+      points: 0,
+      orders: [],
     }),
 
   expandCloudQuota: (quota, level) =>
@@ -134,24 +130,20 @@ export const useAppStore = create<AppState>((set, get) => ({
     if (count < 2) return;
     set({
       todayOutfitIndex: (todayOutfitIndex + 1) % count,
-      todayOutfitConfirmed: false,
     });
   },
 
   confirmOutfit: () => {
-    const today = new Date().getDate();
-    const { clothing, todayOutfitIndex, todayOutfitConfirmed } = get();
+    const today = localDateKey(new Date());
+    const { clothing, todayOutfitIndex, outfitDays } = get();
     const { items } = getOutfitRecommendation(clothing, todayOutfitIndex);
-    if (!items.length || todayOutfitConfirmed) return;
+    if (!items.length || outfitDays.includes(today)) return;
     const wornIds = new Set(items.map((item) => item.id));
     set((state) => ({
-      todayOutfitConfirmed: true,
-      outfitDays: state.outfitDays.includes(today)
-        ? state.outfitDays
-        : [...state.outfitDays, today],
+      outfitDays: [...state.outfitDays, today],
       clothing: state.clothing.map((item) =>
         wornIds.has(item.id)
-          ? { ...item, wearCount: item.wearCount + 1, lastWornDaysAgo: 0 }
+          ? { ...item, wearCount: item.wearCount + 1, lastWornAt: today }
           : item
       ),
     }));
@@ -163,14 +155,12 @@ export const useAppStore = create<AppState>((set, get) => ({
         ...item,
         id: String(Date.now()),
         wearCount: 0,
-        lastWornDaysAgo: -1,
+        lastWornAt: null,
         status: 'normal',
       };
       return {
         clothing: [newItem, ...state.clothing],
         todayOutfitIndex: 0,
-        todayOutfitConfirmed: false,
-        cloudUsed: state.cloudUsed + 1,
       };
     }),
 }));
@@ -192,20 +182,26 @@ export function getOutfitRecommendation(clothing: ClothingItem[], index: number)
   return { items, count };
 }
 
-export function getWardrobeOverview(clothing: ClothingItem[]) {
-  const categories = [
-    { key: 'top', label: '上衣', count: clothing.filter((c) => c.category === 'top').length },
-    { key: 'bottom', label: '裤子', count: clothing.filter((c) => c.category === 'bottom').length },
-    { key: 'shoes', label: '鞋子', count: clothing.filter((c) => c.category === 'shoes').length },
-    {
-      key: 'outerwear',
-      label: '外套',
-      count: clothing.filter((c) => c.category === 'outerwear').length,
-    },
-  ];
+export function localDateKey(date: Date) {
+  return [date.getFullYear(), date.getMonth() + 1, date.getDate()]
+    .map((part) => String(part).padStart(2, '0')).join('-');
+}
+
+export function daysSinceWorn(lastWornAt: string | null, today = new Date()) {
+  if (!lastWornAt) return -1;
+  return Math.max(0, (Date.parse(localDateKey(today)) - Date.parse(lastWornAt)) / 86_400_000);
+}
+
+export function getWardrobeOverview(clothing: ClothingItem[], outfitDays: string[] = [], today = new Date()) {
+  const monday = new Date(today);
+  monday.setDate(today.getDate() - (today.getDay() + 6) % 7);
+  const weekStart = localDateKey(monday);
+  const todayKey = localDateKey(today);
   return {
     total: clothing.length,
-    weeklyOutfits: 4,
-    categories,
+    weeklyOutfits: outfitDays.filter((day) => day >= weekStart && day <= todayKey).length,
+    categories: Object.entries(categoryLabels).map(([key, label]) => ({
+      key, label, count: clothing.filter((item) => item.category === key).length,
+    })),
   };
 }

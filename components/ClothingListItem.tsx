@@ -1,3 +1,4 @@
+import { daysSinceWorn } from '@/store/useAppStore';
 import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
 import { ClothingItem, categoryLabels } from '@/constants/mockData';
 import { colors, radius, spacing, typography } from '@/constants/theme';
@@ -14,6 +15,7 @@ const statusLabels = {
 };
 
 export function ClothingListItem({ item, onPress }: ClothingListItemProps) {
+  const daysSinceLastWear = daysSinceWorn(item.lastWornAt);
   const status = statusLabels[item.status];
 
   return (
@@ -39,11 +41,11 @@ export function ClothingListItem({ item, onPress }: ClothingListItemProps) {
           {categoryLabels[item.category]} · {item.color} · 穿了 {item.wearCount} 次
         </Text>
         <Text style={styles.lastWorn}>
-          {item.lastWornDaysAgo < 0
+          {daysSinceLastWear < 0
             ? '尚未穿着'
-            : item.lastWornDaysAgo === 0
+            : daysSinceLastWear === 0
               ? '今天穿过'
-              : `${item.lastWornDaysAgo} 天前穿过`}
+              : `${daysSinceLastWear} 天前穿过`}
         </Text>
       </View>
       <View style={[styles.colorDot, { backgroundColor: item.colorHex }]} />

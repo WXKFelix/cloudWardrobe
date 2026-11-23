@@ -1,16 +1,18 @@
 import { useState } from 'react';
 import { useRouter } from 'expo-router';
-import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { ScreenContainer } from '@/components/ScreenContainer';
 import { SectionHeader } from '@/components/SectionHeader';
 import { ClothingTryOn, type TryOnGarment } from '@/components/ClothingTryOn';
 import { OutfitCard } from '@/components/OutfitCard';
 import { Card } from '@/components/ui/Card';
-import { mockFashionTips, mockReminders } from '@/constants/mockData';
+import { mockFashionTips } from '@/constants/mockData';
 import { colors, radius, shadows, spacing, typography } from '@/constants/theme';
 import {
+  daysSinceWorn,
   getWardrobeOverview,
+  localDateKey,
   getOutfitRecommendation,
   useAppStore,
 } from '@/store/useAppStore';
@@ -21,6 +23,7 @@ const categoryEmojis: Record<string, string> = {
   bottom: '👖',
   shoes: '👟',
   outerwear: '🧥',
+  accessory: '👜',
 };
 
 export default function HomeScreen() {
@@ -28,12 +31,18 @@ export default function HomeScreen() {
   const [openPreviewKey, setOpenPreviewKey] = useState<string>();
   const clothing = useAppStore((s) => s.clothing);
   const todayOutfitIndex = useAppStore((s) => s.todayOutfitIndex);
-  const todayOutfitConfirmed = useAppStore((s) => s.todayOutfitConfirmed);
+  const outfitDays = useAppStore((s) => s.outfitDays);
   const refreshOutfit = useAppStore((s) => s.refreshOutfit);
   const confirmOutfit = useAppStore((s) => s.confirmOutfit);
   const username = useAppStore((s) => s.username);
 
-  const stats = getWardrobeOverview(clothing);
+  const today = new Date();
+  const stats = getWardrobeOverview(clothing, outfitDays, today);
+  const reminders = clothing.flatMap<{ id: string; text: string; icon: 'water-outline' | 'archive-outline' }>((item) => {
+    if (item.status === 'washing') return [{ id: item.id, text: `${item.name}待清洗`, icon: 'water-outline' as const }];
+    const days = daysSinceWorn(item.lastWornAt, today);
+    return days >= 30 ? [{ id: item.id, text: `${item.name}已有 ${days} 天未穿`, icon: 'archive-outline' as const }] : [];
+  });
   const outfit = getOutfitRecommendation(clothing, todayOutfitIndex);
   const previewGarments = outfit.items.flatMap<TryOnGarment>((item) => {
     const image = item.tryOnImageUri ?? item.imageUri;
@@ -41,7 +50,7 @@ export default function HomeScreen() {
   });
   const previewKey = outfit.items.map(({ id }) => id).join(':');
 
-  const hour = new Date().getHours();
+  const hour = today.getHours();
   const greeting = hour < 12 ? '早上好' : hour < 18 ? '下午好' : '晚上好';
 
   return (
@@ -51,10 +60,6 @@ export default function HomeScreen() {
           <Text style={styles.greeting}>
             {greeting}，{username || '用户'}
           </Text>
-          <View style={styles.weatherPill}>
-            <Ionicons name="sunny-outline" size={14} color={colors.primary} />
-            <Text style={styles.weatherText}>北京 22°C 晴 · 适宜轻薄穿搭</Text>
-          </View>
         </View>
         <View style={styles.bell}>
           <Ionicons name="notifications-outline" size={20} color={colors.primary} />
@@ -67,7 +72,7 @@ export default function HomeScreen() {
           ? outfit.count > 1 ? '从你的衣橱搭配' : '录入更多衣物即可尝试其他搭配。'
           : '录入可穿的上衣、裤子或鞋子，开始搭配。'}
         items={outfit.items}
-        confirmed={todayOutfitConfirmed}
+        confirmed={outfitDays.includes(localDateKey(today))}
         onConfirm={confirmOutfit}
         canRefresh={outfit.count > 1}
         onRefresh={() => {
@@ -90,11 +95,7 @@ export default function HomeScreen() {
           title="衣橱概览"
           subtitle={`共 ${stats.total} 件 · 本周穿搭 ${stats.weeklyOutfits} 次`}
         />
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.statRow}
-        >
+        <View style={styles.statRow}>
           {stats.categories.map((cat) => (
             <View key={cat.key} style={styles.statCard}>
               <View style={styles.statIconWrap}>
@@ -104,17 +105,17 @@ export default function HomeScreen() {
               <Text style={styles.statLabel}>{cat.label}</Text>
             </View>
           ))}
-        </ScrollView>
+        </View>
       </View>
 
       <View style={styles.section}>
-        <SectionHeader eyebrow="环保" title="绿色提醒" subtitle="让衣物保持最佳状态" />
+        <SectionHeader eyebrow="环保" title="绿色提醒" subtitle={reminders.length === 0 ? '暂无提醒' : undefined} />
         <View style={styles.reminderList}>
-          {mockReminders.map((r) => (
+          {reminders.map((r) => (
             <View key={r.id} style={styles.reminder}>
               <View style={styles.reminderIcon}>
                 <Ionicons
-                  name={r.type === 'warning' ? 'water-outline' : 'archive-outline'}
+                  name={r.icon}
                   size={16}
                   color={colors.primary}
                 />
@@ -155,21 +156,6 @@ const styles = StyleSheet.create({
     color: colors.text,
     lineHeight: 30,
   },
-  weatherPill: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    alignSelf: 'flex-start',
-    gap: 6,
-    backgroundColor: colors.ecoMuted,
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: radius.full,
-  },
-  weatherText: {
-    ...typography.caption,
-    color: colors.textSecondary,
-    fontSize: 12,
-  },
   bell: {
     width: 42,
     height: 42,
@@ -183,11 +169,13 @@ const styles = StyleSheet.create({
   },
   section: { marginTop: spacing.lg },
   statRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
     gap: spacing.sm,
-    paddingRight: spacing.sm,
   },
   statCard: {
-    width: 88,
+    flexBasis: '29%',
+    flexGrow: 1,
     backgroundColor: colors.surface,
     borderRadius: radius.lg,
     paddingVertical: spacing.md,

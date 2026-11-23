@@ -3,6 +3,7 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { ClothingListItem } from '@/components/ClothingListItem';
 import { ScreenContainer } from '@/components/ScreenContainer';
+import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { ClothingCategory, categoryLabels } from '@/constants/mockData';
 import { colors, radius, spacing, typography } from '@/constants/theme';
@@ -14,6 +15,7 @@ const filters: Array<{ key: ClothingCategory | 'all'; label: string }> = [
   { key: 'bottom', label: '裤子' },
   { key: 'shoes', label: '鞋子' },
   { key: 'outerwear', label: '外套' },
+  { key: 'accessory', label: '配饰' },
 ];
 
 export default function WardrobeScreen() {
@@ -61,8 +63,12 @@ export default function WardrobeScreen() {
         {filtered.length === 0 ? (
           <View style={styles.empty}>
             <Text style={styles.emptyEmoji}>👗</Text>
-            <Text style={styles.emptyTitle}>还没有衣物</Text>
-            <Text style={styles.emptyDesc}>点击下方 + 录入你的第一件衣物</Text>
+            <Text style={styles.emptyTitle}>{clothing.length === 0 ? '还没有衣物' : '没有符合条件的衣物'}</Text>
+            {clothing.length === 0 ? (
+              <Button title="录入第一件衣物" onPress={() => router.push('/(tabs)/add')} />
+            ) : (
+              <Button title="清除筛选" variant="outline" onPress={() => { setSearch(''); setFilter('all'); }} />
+            )}
           </View>
         ) : (
           filtered.map((item) => (
@@ -97,5 +103,4 @@ const styles = StyleSheet.create({
   empty: { alignItems: 'center', paddingVertical: spacing.xxl, gap: spacing.sm },
   emptyEmoji: { fontSize: 48 },
   emptyTitle: { ...typography.subtitle, color: colors.text },
-  emptyDesc: { ...typography.body, color: colors.textSecondary },
 });

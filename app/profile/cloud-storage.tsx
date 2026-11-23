@@ -12,7 +12,8 @@ import { getWardrobeOverview, useAppStore } from '@/store/useAppStore';
 
 export default function CloudStorageScreen() {
   const router = useRouter();
-  const { cloudUsed, cloudQuota, membershipLevel, expandCloudQuota, clothing } = useAppStore();
+  const { cloudQuota, membershipLevel, expandCloudQuota, clothing } = useAppStore();
+  const cloudUsed = clothing.length;
   const [selectedPlan, setSelectedPlan] = useState<string | null>(null);
   const [showSuccess, setShowSuccess] = useState(false);
 

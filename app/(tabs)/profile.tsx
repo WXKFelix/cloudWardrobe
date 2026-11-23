@@ -20,7 +20,8 @@ const menuItems = [
 export default function ProfileScreen() {
   const router = useRouter();
   const avatarRef = useRef<AvatarPickerRef>(null);
-  const { username, avatarUri, userType, cloudUsed, cloudQuota, logout, setAvatar } = useAppStore();
+  const { username, avatarUri, userType, cloudQuota, logout, setAvatar } = useAppStore();
+  const cloudUsed = useAppStore((s) => s.clothing.length);
   const quotaPercent = Math.round((cloudUsed / cloudQuota) * 100);
 
   const handleLogout = () => {
