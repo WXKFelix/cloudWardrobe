@@ -1,14 +1,12 @@
-import { randomUUID } from 'node:crypto';
 import { createServer, type IncomingMessage } from 'node:http';
-import { setTimeout as delay } from 'node:timers/promises';
 
 const apiKey = process.env.DASHSCOPE_API_KEY?.trim();
-const uploadBaseUrl = 'https://dashscope.aliyuncs.com/api/v1';
-const modelBaseUrl = process.env.DASHSCOPE_BASE_URL?.trim().replace(/\/+$/, '') || uploadBaseUrl;
+const defaultBaseUrl = 'https://dashscope.aliyuncs.com/api/v1';
+const modelBaseUrl = process.env.DASHSCOPE_BASE_URL?.trim().replace(/\/+$/, '') || defaultBaseUrl;
 if (!/^https:\/\/(?:dashscope\.aliyuncs\.com|[a-z0-9-]+\.cn-beijing\.maas\.aliyuncs\.com)\/api\/v1$/i.test(modelBaseUrl)) {
   throw new Error('DASHSCOPE_BASE_URL 必须是华北 2（北京）的 DashScope 原生 API 地址，以 /api/v1 结尾。');
 }
-const model = 'aitryon';
+const model = 'qwen-image-2.0-pro';
 const port = Number(process.env.TRY_ON_PORT ?? 8787);
 const host = process.env.TRY_ON_HOST ?? '127.0.0.1';
 const webOrigin = process.env.TRY_ON_WEB_ORIGIN ?? 'http://localhost:19006';
@@ -39,15 +37,14 @@ async function readImages(request: IncomingMessage) {
   }
 
   const { personImage, garmentImage } = body ?? {};
-  return { person: decodeImage(personImage), garment: decodeImage(garmentImage) };
+  return { person: validateImage(personImage), garment: validateImage(garmentImage) };
 }
 
-function decodeImage(value: unknown) {
-  const match = typeof value === 'string' ? imagePattern.exec(value) : null;
-  if (!match) throw new RequestError(400, '请选择 JPG、PNG 或 WebP 照片。');
-  const [, contentType, encoded] = match;
-  const bytes = Buffer.from(encoded, 'base64');
-  return new Blob([new Uint8Array(bytes)], { type: contentType });
+function validateImage(value: unknown): string {
+  if (typeof value !== 'string' || !imagePattern.test(value)) {
+    throw new RequestError(400, '请选择 JPG、PNG 或 WebP 照片。');
+  }
+  return value;
 }
 
 interface FailureTrace {
@@ -73,116 +70,52 @@ interface DashScopeResponse {
   request_id?: string;
 }
 
-async function dashScope<T extends DashScopeResponse>(path: string, signal: AbortSignal, trace: FailureTrace, body?: object): Promise<T> {
-  const baseUrl = trace.stage === 'upload-policy' ? uploadBaseUrl : modelBaseUrl;
-  const response = await fetch(`${baseUrl}/${path}`, {
+interface ImageEditResponse extends DashScopeResponse {
+  output?: { choices?: Array<{ message?: { content?: Array<{ image?: string }> } }> };
+}
+
+async function generateTryOn(images: Awaited<ReturnType<typeof readImages>>, signal: AbortSignal, trace: FailureTrace) {
+  enterStage(trace, 'edit-image');
+  const response = await fetch(`${modelBaseUrl}/services/aigc/multimodal-generation/generation`, {
+    method: 'POST',
     redirect: 'error',
-    method: body ? 'POST' : 'GET',
-    headers: {
-      Authorization: `Bearer ${apiKey}`,
-      ...(body && {
-        'Content-Type': 'application/json',
-        'X-DashScope-Async': 'enable',
-        'X-DashScope-OssResourceResolve': 'enable',
-      }),
-    },
-    body: body ? JSON.stringify(body) : undefined,
+    headers: { Authorization: `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      model,
+      input: {
+        messages: [{
+          role: 'user',
+          content: [
+            { image: images.person },
+            { image: images.garment },
+            { text: '以第一张人像为底图，仅将人物上衣替换为第二张图中的真实上衣。保持人物面部、体型、姿势、下装、背景和构图，尽量还原参考上衣的剪裁、颜色、材质、印花和细节。生成一张自然的上身预览照片。' },
+          ],
+        }],
+      },
+      parameters: { n: 1, prompt_extend: false },
+    }),
     signal,
   });
   trace.upstreamStatus = response.status;
   trace.requestId = logField(response.headers.get('x-request-id'));
-  const result = await response.json().catch(() => null) as T | null;
+  const result = await response.json().catch(() => null) as ImageEditResponse | null;
   trace.code = logField(result?.code);
   trace.requestId = logField(result?.request_id) ?? trace.requestId;
   if (response.status === 401 || response.status === 403) {
     throw new RequestError(502, '百炼鉴权失败，请检查华北 2（北京）的 API Key 和模型权限。');
   }
   if (response.status === 429) throw new RequestError(429, '百炼调用频率过高，请稍后重试。');
-  if (response.status === 404 && trace.stage === 'submit-task' && modelBaseUrl === uploadBaseUrl) {
-    throw new RequestError(502, '百炼任务提交返回 404，请确认模型可用，并在服务端设置业务空间的 DASHSCOPE_BASE_URL。');
+  if (response.status === 404 && modelBaseUrl === defaultBaseUrl) {
+    throw new RequestError(502, '百炼图像编辑返回 404，请确认模型可用，并在服务端设置业务空间的 DASHSCOPE_BASE_URL。');
   }
   if (!response.ok || !result || result.code) {
     throw new RequestError(502, '百炼请求失败，请检查模型额度和照片格式。');
   }
-  return result;
-}
-
-interface UploadPolicy {
-  upload_host: string;
-  upload_dir: string;
-  oss_access_key_id: string;
-  signature: string;
-  policy: string;
-  x_oss_object_acl: string;
-  x_oss_forbid_overwrite: string;
-}
-
-async function uploadPhoto(image: Blob, policy: UploadPolicy, signal: AbortSignal, trace: FailureTrace) {
-  const filename = `${randomUUID()}.${image.type.split('/')[1]}`;
-  const key = `${policy.upload_dir}/${filename}`;
-  const form = new FormData();
-  form.set('OSSAccessKeyId', policy.oss_access_key_id);
-  form.set('Signature', policy.signature);
-  form.set('policy', policy.policy);
-  form.set('x-oss-object-acl', policy.x_oss_object_acl);
-  form.set('x-oss-forbid-overwrite', policy.x_oss_forbid_overwrite);
-  form.set('key', key);
-  form.set('success_action_status', '200');
-  form.set('file', image, filename);
-
-  const host = new URL(policy.upload_host);
-  if (!host.hostname.endsWith('.aliyuncs.com')) {
-    throw new RequestError(502, '百炼返回了无效的上传地址。');
-  }
-  host.protocol = 'https:';
-  const response = await fetch(host, { method: 'POST', body: form, signal, redirect: 'error' });
-  if (!response.ok) {
-    trace.upstreamStatus = response.status;
-    trace.requestId = logField(response.headers.get('x-oss-request-id'));
-    const xml = await response.text().catch(() => '');
-    trace.code = logField(/<Code>([^<]+)<\/Code>/.exec(xml)?.[1]);
-    trace.requestId ??= logField(/<RequestId>([^<]+)<\/RequestId>/.exec(xml)?.[1]);
-    throw new RequestError(502, '照片上传到百炼失败，请稍后重试。');
-  }
-  return `oss://${key}`;
-}
-
-interface Prediction extends DashScopeResponse {
-  output?: { task_id?: string; task_status?: string; code?: string; image_url?: string };
-}
-
-async function generateTryOn(images: Awaited<ReturnType<typeof readImages>>, signal: AbortSignal, trace: FailureTrace) {
-  enterStage(trace, 'upload-policy');
-  const { data: policy } = await dashScope<DashScopeResponse & { data?: UploadPolicy }>(`uploads?action=getPolicy&model=${model}`, signal, trace);
-  if (!policy) throw new RequestError(502, '无法获取百炼照片上传凭证。');
-
-  enterStage(trace, 'upload-person-photo');
-  const personUrl = await uploadPhoto(images.person, policy, signal, trace);
-  enterStage(trace, 'upload-garment-photo');
-  const garmentUrl = await uploadPhoto(images.garment, policy, signal, trace);
-
-  enterStage(trace, 'submit-task');
-  const job = await dashScope<Prediction>('services/aigc/image2image/image-synthesis', signal, trace, {
-    model,
-    input: { person_image_url: personUrl, top_garment_url: garmentUrl },
-    parameters: { restore_face: true },
-  });
-  const taskId = job.output?.task_id;
-  if (!taskId) throw new RequestError(502, '无法开始百炼试穿，请稍后重试。');
-
-  enterStage(trace, 'poll-task');
-  while (!signal.aborted) {
-    await delay(3000, undefined, { signal });
-    const { output } = await dashScope<Prediction>(`tasks/${encodeURIComponent(taskId)}`, signal, trace);
-    if (output?.task_status === 'SUCCEEDED' && /^https?:\/\//i.test(output.image_url ?? '')) {
-      return output.image_url!.replace(/^http:/i, 'https:');
-    }
-    if (!['PENDING', 'RUNNING'].includes(output?.task_status ?? '')) {
-      trace.code = logField(output?.code) ?? logField(output?.task_status);
-      throw new RequestError(502, '无法生成上身图，请检查额度或换一张正面清晰的照片再试。');
-    }
-  }
-  signal.throwIfAborted();
+  const image = result.output?.choices?.[0]?.message?.content?.find(
+    (part) => typeof part.image === 'string' && /^https:\/\//i.test(part.image)
+  )?.image;
+  if (!image) throw new RequestError(502, '百炼未返回上身预览图片。');
+  return image;
 }
 
 createServer({ requestTimeout: 30_000 }, async (request, response) => {

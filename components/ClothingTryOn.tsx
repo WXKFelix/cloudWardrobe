@@ -88,7 +88,7 @@ export function ClothingTryOn({ garmentImage }: { garmentImage: string }) {
       {personImage ? (
         <>
           <Image source={{ uri: personImage }} style={styles.image} resizeMode="contain" accessibilityLabel="本人照片" />
-          <Text style={styles.hint}>点击生成后，本人照片和衣物照片将上传至阿里云百炼临时存储处理。</Text>
+          <Text style={styles.hint}>点击生成后，本人照片和衣物照片将发送给阿里云百炼进行图像编辑。</Text>
           <Button
             title={busy ? '处理中…' : '生成上身预览'}
             onPress={() => void generate()}
