@@ -3,7 +3,11 @@ import { createServer, type IncomingMessage } from 'node:http';
 import { setTimeout as delay } from 'node:timers/promises';
 
 const apiKey = process.env.DASHSCOPE_API_KEY?.trim();
-const baseUrl = 'https://dashscope.aliyuncs.com/api/v1';
+const uploadBaseUrl = 'https://dashscope.aliyuncs.com/api/v1';
+const modelBaseUrl = process.env.DASHSCOPE_BASE_URL?.trim().replace(/\/+$/, '') || uploadBaseUrl;
+if (!/^https:\/\/(?:dashscope\.aliyuncs\.com|[a-z0-9-]+\.cn-beijing\.maas\.aliyuncs\.com)\/api\/v1$/i.test(modelBaseUrl)) {
+  throw new Error('DASHSCOPE_BASE_URL 必须是华北 2（北京）的 DashScope 原生 API 地址，以 /api/v1 结尾。');
+}
 const model = 'aitryon';
 const port = Number(process.env.TRY_ON_PORT ?? 8787);
 const host = process.env.TRY_ON_HOST ?? '127.0.0.1';
@@ -70,7 +74,9 @@ interface DashScopeResponse {
 }
 
 async function dashScope<T extends DashScopeResponse>(path: string, signal: AbortSignal, trace: FailureTrace, body?: object): Promise<T> {
+  const baseUrl = trace.stage === 'upload-policy' ? uploadBaseUrl : modelBaseUrl;
   const response = await fetch(`${baseUrl}/${path}`, {
+    redirect: 'error',
     method: body ? 'POST' : 'GET',
     headers: {
       Authorization: `Bearer ${apiKey}`,
@@ -92,6 +98,9 @@ async function dashScope<T extends DashScopeResponse>(path: string, signal: Abor
     throw new RequestError(502, '百炼鉴权失败，请检查华北 2（北京）的 API Key 和模型权限。');
   }
   if (response.status === 429) throw new RequestError(429, '百炼调用频率过高，请稍后重试。');
+  if (response.status === 404 && trace.stage === 'submit-task' && modelBaseUrl === uploadBaseUrl) {
+    throw new RequestError(502, '百炼任务提交返回 404，请确认模型可用，并在服务端设置业务空间的 DASHSCOPE_BASE_URL。');
+  }
   if (!response.ok || !result || result.code) {
     throw new RequestError(502, '百炼请求失败，请检查模型额度和照片格式。');
   }

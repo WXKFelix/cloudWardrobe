@@ -220,6 +220,8 @@ npx expo start --web --port 19007
 
 使用 Node.js 22。在 `services/CloudWardrobe` 安装依赖，将 `.env.example` 复制为 `.env`，填入 阿里云百炼华北 2（北京）地域的 API Key `DASHSCOPE_API_KEY`，然后运行 `npm run try-on`。试穿服务默认监听 `127.0.0.1:8787`，无需启动 PostgreSQL。密钥仅配置在服务端。试穿使用百炼基础版 `aitryon`，输入照片通过百炼临时存储上传（有效期 48 小时），输出使用百炼返回的临时结果链接。
 
+使用百炼业务空间密钥时，在后端 `.env` 设置 `DASHSCOPE_BASE_URL=https://<WorkspaceId>.cn-beijing.maas.aliyuncs.com/api/v1`。可从控制台复制按量付费地址的域名，将结尾的 `/compatible-mode/v1` 改为 `/api/v1`。任务提交和查询使用这个地址，上传凭证仍使用百炼临时存储文档指定的北京公共地址。修改后重启后端。
+
 另开终端，在项目根目录运行 `npm run web`，使用 `http://localhost:19006` 访问。录入一件有清晰正面照片的「上衣」，打开衣物详情，选择本人照片并点「生成上身预览」。Web 开发服务器使用其他地址时，在服务端设置 `TRY_ON_WEB_ORIGIN`。前端可用 `EXPO_PUBLIC_TRY_ON_API_URL` 指定服务地址。
 
 如需在真机联调，可在受信任的局域网将服务端 `TRY_ON_HOST` 设为电脑的局域网 IP，同时把前端 `EXPO_PUBLIC_TRY_ON_API_URL` 设为对应的 HTTP 地址和端口。这个本地服务暂未接入账号鉴权，部署到公网前需加鉴权与用户额度限制。
