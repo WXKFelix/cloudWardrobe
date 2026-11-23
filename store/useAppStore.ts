@@ -6,7 +6,6 @@ import {
   mockClothing,
   mockOrders,
   mockOutfitDays,
-  wardrobeStats,
 } from '@/constants/mockData';
 
 export interface AppSettings {
@@ -130,16 +129,21 @@ export const useAppStore = create<AppState>((set, get) => ({
   completeOnboarding: () => set({ hasCompletedOnboarding: true }),
 
   refreshOutfit: () => {
-    const { todayOutfitIndex } = get();
+    const { clothing, todayOutfitIndex } = get();
+    const { count } = getOutfitRecommendation(clothing, todayOutfitIndex);
+    if (count < 2) return;
     set({
-      todayOutfitIndex: (todayOutfitIndex + 1) % outfitPresets.length,
+      todayOutfitIndex: (todayOutfitIndex + 1) % count,
       todayOutfitConfirmed: false,
     });
   },
 
   confirmOutfit: () => {
     const today = new Date().getDate();
-    const wornIds = new Set(outfitPresets[get().todayOutfitIndex].clothingIds);
+    const { clothing, todayOutfitIndex, todayOutfitConfirmed } = get();
+    const { items } = getOutfitRecommendation(clothing, todayOutfitIndex);
+    if (!items.length || todayOutfitConfirmed) return;
+    const wornIds = new Set(items.map((item) => item.id));
     set((state) => ({
       todayOutfitConfirmed: true,
       outfitDays: state.outfitDays.includes(today)
@@ -164,51 +168,31 @@ export const useAppStore = create<AppState>((set, get) => ({
       };
       return {
         clothing: [newItem, ...state.clothing],
+        todayOutfitIndex: 0,
+        todayOutfitConfirmed: false,
         cloudUsed: state.cloudUsed + 1,
       };
     }),
 }));
 
-export interface OutfitPreset {
-  title: string;
-  desc: string;
-  /** 上衣、下装、鞋子 — 对应 mockClothing 中的 id */
-  clothingIds: [string, string, string];
-}
-
-export const outfitPresets: OutfitPreset[] = [
-  {
-    title: '清爽通勤风',
-    desc: '适合今日 22°C 晴好天气，简约干练',
-    clothingIds: ['1', '2', '3'],
-  },
-  {
-    title: '休闲周末风',
-    desc: '轻松舒适，针织开衫配乐福鞋',
-    clothingIds: ['5', '6', '7'],
-  },
-  {
-    title: '都市风衣 Look',
-    desc: '防风有型，早晚温差从容应对',
-    clothingIds: ['4', '6', '3'],
-  },
-];
-
-export function resolveOutfitPreset(
-  preset: OutfitPreset,
-  clothing: ClothingItem[]
-): { title: string; desc: string; items: string[]; emojis: string[] } {
-  const pieces = preset.clothingIds.map((id) => clothing.find((c) => c.id === id));
-  return {
-    title: preset.title,
-    desc: preset.desc,
-    items: pieces.map((p) => p?.name ?? '—'),
-    emojis: pieces.map((p) => p?.emoji ?? '👕'),
-  };
+export function getOutfitRecommendation(clothing: ClothingItem[], index: number) {
+  const available = clothing.filter((item) => item.status === 'normal');
+  const slots = [
+    available.filter((item) => item.category === 'top' || item.category === 'outerwear'),
+    available.filter((item) => item.category === 'bottom'),
+    available.filter((item) => item.category === 'shoes'),
+  ].filter((slot) => slot.length > 0);
+  const count = slots.length ? slots.reduce((total, slot) => total * slot.length, 1) : 0;
+  let combination = index;
+  const items = slots.map((slot) => {
+    const item = slot[combination % slot.length];
+    combination = Math.floor(combination / slot.length);
+    return item;
+  });
+  return { items, count };
 }
 
 export function getWardrobeOverview(clothing: ClothingItem[]) {
-  if (clothing.length === 0) return wardrobeStats;
   const categories = [
     { key: 'top', label: '上衣', count: clothing.filter((c) => c.category === 'top').length },
     { key: 'bottom', label: '裤子', count: clothing.filter((c) => c.category === 'bottom').length },

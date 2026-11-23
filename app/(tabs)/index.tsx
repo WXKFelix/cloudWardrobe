@@ -1,15 +1,17 @@
+import { useState } from 'react';
+import { useRouter } from 'expo-router';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { ScreenContainer } from '@/components/ScreenContainer';
 import { SectionHeader } from '@/components/SectionHeader';
+import { ClothingTryOn } from '@/components/ClothingTryOn';
 import { OutfitCard } from '@/components/OutfitCard';
 import { Card } from '@/components/ui/Card';
 import { mockFashionTips, mockReminders } from '@/constants/mockData';
 import { colors, radius, shadows, spacing, typography } from '@/constants/theme';
 import {
   getWardrobeOverview,
-  outfitPresets,
-  resolveOutfitPreset,
+  getOutfitRecommendation,
   useAppStore,
 } from '@/store/useAppStore';
 
@@ -22,6 +24,8 @@ const categoryEmojis: Record<string, string> = {
 };
 
 export default function HomeScreen() {
+  const router = useRouter();
+  const [previewItemId, setPreviewItemId] = useState<string>();
   const clothing = useAppStore((s) => s.clothing);
   const todayOutfitIndex = useAppStore((s) => s.todayOutfitIndex);
   const todayOutfitConfirmed = useAppStore((s) => s.todayOutfitConfirmed);
@@ -30,7 +34,9 @@ export default function HomeScreen() {
   const username = useAppStore((s) => s.username);
 
   const stats = getWardrobeOverview(clothing);
-  const outfit = resolveOutfitPreset(outfitPresets[todayOutfitIndex], clothing);
+  const outfit = getOutfitRecommendation(clothing, todayOutfitIndex);
+  const previewTop = outfit.items.find((item) => item.category === 'top' && item.imageUri);
+  const previewImage = previewTop?.tryOnImageUri ?? previewTop?.imageUri;
 
   const hour = new Date().getHours();
   const greeting = hour < 12 ? '早上好' : hour < 18 ? '下午好' : '晚上好';
@@ -53,14 +59,26 @@ export default function HomeScreen() {
       </View>
 
       <OutfitCard
-        title={outfit.title}
-        description={outfit.desc}
-        emojis={outfit.emojis}
+        title="今日穿搭"
+        description={outfit.items.length
+          ? outfit.count > 1 ? '从你的衣橱搭配' : '录入更多衣物即可尝试其他搭配。'
+          : '录入可穿的上衣、裤子或鞋子，开始搭配。'}
         items={outfit.items}
         confirmed={todayOutfitConfirmed}
         onConfirm={confirmOutfit}
-        onRefresh={refreshOutfit}
+        canRefresh={outfit.count > 1}
+        onRefresh={() => {
+          setPreviewItemId(undefined);
+          refreshOutfit();
+        }}
+        onAdd={() => router.push('/(tabs)/add')}
+        onPreview={previewTop ? () => {
+          setPreviewItemId(previewItemId === previewTop.id ? undefined : previewTop.id);
+        } : undefined}
       />
+      {previewTop && previewImage && previewItemId === previewTop.id ? (
+        <ClothingTryOn key={previewTop.id} garmentImage={previewImage} />
+      ) : null}
 
       <View style={styles.section}>
         <SectionHeader
