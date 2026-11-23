@@ -46,7 +46,30 @@ function decodeImage(value: unknown) {
   return new Blob([new Uint8Array(bytes)], { type: contentType });
 }
 
-async function dashScope<T>(path: string, signal: AbortSignal, body?: object): Promise<T> {
+interface FailureTrace {
+  stage: string;
+  upstreamStatus?: number;
+  code?: string;
+  requestId?: string;
+}
+
+function logField(value: unknown) {
+  return typeof value === 'string' && /^[a-z0-9_.:-]{1,128}$/i.test(value) ? value : undefined;
+}
+
+function enterStage(trace: FailureTrace, stage: string) {
+  trace.stage = stage;
+  trace.upstreamStatus = undefined;
+  trace.code = undefined;
+  trace.requestId = undefined;
+}
+
+interface DashScopeResponse {
+  code?: string;
+  request_id?: string;
+}
+
+async function dashScope<T extends DashScopeResponse>(path: string, signal: AbortSignal, trace: FailureTrace, body?: object): Promise<T> {
   const response = await fetch(`${baseUrl}/${path}`, {
     method: body ? 'POST' : 'GET',
     headers: {
@@ -60,12 +83,19 @@ async function dashScope<T>(path: string, signal: AbortSignal, body?: object): P
     body: body ? JSON.stringify(body) : undefined,
     signal,
   });
+  trace.upstreamStatus = response.status;
+  trace.requestId = logField(response.headers.get('x-request-id'));
+  const result = await response.json().catch(() => null) as T | null;
+  trace.code = logField(result?.code);
+  trace.requestId = logField(result?.request_id) ?? trace.requestId;
   if (response.status === 401 || response.status === 403) {
     throw new RequestError(502, '百炼鉴权失败，请检查华北 2（北京）的 API Key 和模型权限。');
   }
   if (response.status === 429) throw new RequestError(429, '百炼调用频率过高，请稍后重试。');
-  if (!response.ok) throw new RequestError(502, '百炼请求失败，请检查模型额度和照片格式。');
-  return response.json();
+  if (!response.ok || !result || result.code) {
+    throw new RequestError(502, '百炼请求失败，请检查模型额度和照片格式。');
+  }
+  return result;
 }
 
 interface UploadPolicy {
@@ -78,7 +108,7 @@ interface UploadPolicy {
   x_oss_forbid_overwrite: string;
 }
 
-async function uploadPhoto(image: Blob, policy: UploadPolicy, signal: AbortSignal) {
+async function uploadPhoto(image: Blob, policy: UploadPolicy, signal: AbortSignal, trace: FailureTrace) {
   const filename = `${randomUUID()}.${image.type.split('/')[1]}`;
   const key = `${policy.upload_dir}/${filename}`;
   const form = new FormData();
@@ -97,23 +127,33 @@ async function uploadPhoto(image: Blob, policy: UploadPolicy, signal: AbortSigna
   }
   host.protocol = 'https:';
   const response = await fetch(host, { method: 'POST', body: form, signal, redirect: 'error' });
-  if (!response.ok) throw new RequestError(502, '照片上传到百炼失败，请稍后重试。');
+  if (!response.ok) {
+    trace.upstreamStatus = response.status;
+    trace.requestId = logField(response.headers.get('x-oss-request-id'));
+    const xml = await response.text().catch(() => '');
+    trace.code = logField(/<Code>([^<]+)<\/Code>/.exec(xml)?.[1]);
+    trace.requestId ??= logField(/<RequestId>([^<]+)<\/RequestId>/.exec(xml)?.[1]);
+    throw new RequestError(502, '照片上传到百炼失败，请稍后重试。');
+  }
   return `oss://${key}`;
 }
 
-interface Prediction {
-  output?: { task_id?: string; task_status?: string; image_url?: string };
+interface Prediction extends DashScopeResponse {
+  output?: { task_id?: string; task_status?: string; code?: string; image_url?: string };
 }
 
-async function generateTryOn(images: Awaited<ReturnType<typeof readImages>>, signal: AbortSignal) {
-  const { data: policy } = await dashScope<{ data?: UploadPolicy }>(`uploads?action=getPolicy&model=${model}`, signal);
+async function generateTryOn(images: Awaited<ReturnType<typeof readImages>>, signal: AbortSignal, trace: FailureTrace) {
+  enterStage(trace, 'upload-policy');
+  const { data: policy } = await dashScope<DashScopeResponse & { data?: UploadPolicy }>(`uploads?action=getPolicy&model=${model}`, signal, trace);
   if (!policy) throw new RequestError(502, '无法获取百炼照片上传凭证。');
 
-  const [personUrl, garmentUrl] = await Promise.all([
-    uploadPhoto(images.person, policy, signal),
-    uploadPhoto(images.garment, policy, signal),
-  ]);
-  const job = await dashScope<Prediction>('services/aigc/image2image/image-synthesis', signal, {
+  enterStage(trace, 'upload-person-photo');
+  const personUrl = await uploadPhoto(images.person, policy, signal, trace);
+  enterStage(trace, 'upload-garment-photo');
+  const garmentUrl = await uploadPhoto(images.garment, policy, signal, trace);
+
+  enterStage(trace, 'submit-task');
+  const job = await dashScope<Prediction>('services/aigc/image2image/image-synthesis', signal, trace, {
     model,
     input: { person_image_url: personUrl, top_garment_url: garmentUrl },
     parameters: { restore_face: true },
@@ -121,13 +161,15 @@ async function generateTryOn(images: Awaited<ReturnType<typeof readImages>>, sig
   const taskId = job.output?.task_id;
   if (!taskId) throw new RequestError(502, '无法开始百炼试穿，请稍后重试。');
 
+  enterStage(trace, 'poll-task');
   while (!signal.aborted) {
     await delay(3000, undefined, { signal });
-    const { output } = await dashScope<Prediction>(`tasks/${encodeURIComponent(taskId)}`, signal);
+    const { output } = await dashScope<Prediction>(`tasks/${encodeURIComponent(taskId)}`, signal, trace);
     if (output?.task_status === 'SUCCEEDED' && /^https?:\/\//i.test(output.image_url ?? '')) {
       return output.image_url!.replace(/^http:/i, 'https:');
     }
     if (!['PENDING', 'RUNNING'].includes(output?.task_status ?? '')) {
+      trace.code = logField(output?.code) ?? logField(output?.task_status);
       throw new RequestError(502, '无法生成上身图，请检查额度或换一张正面清晰的照片再试。');
     }
   }
@@ -166,11 +208,18 @@ createServer({ requestTimeout: 30_000 }, async (request, response) => {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 120_000);
   response.on('close', () => controller.abort());
+  const trace: FailureTrace = { stage: 'read-input' };
   try {
     const images = await readImages(request);
-    const imageUri = await generateTryOn(images, controller.signal);
+    const imageUri = await generateTryOn(images, controller.signal, trace);
     send(200, { imageUri });
   } catch (error) {
+    console.error('[try-on] 失败', JSON.stringify({
+      stage: trace.stage,
+      upstreamStatus: trace.upstreamStatus ?? null,
+      code: trace.code ?? null,
+      requestId: trace.requestId ?? null,
+    }));
     if (response.destroyed) return;
     if (error instanceof RequestError) send(error.status, { error: error.message });
     else if (controller.signal.aborted) send(504, { error: '生成超时，请稍后重试。' });
