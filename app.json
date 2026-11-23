@@ -50,6 +50,14 @@
           "cameraPermission": "允许云衣柜使用相机拍摄衣物照片。",
           "microphonePermission": false
         }
+      ],
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "usesCleartextTraffic": true
+          }
+        }
       ]
     ]
   }
