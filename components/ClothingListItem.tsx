@@ -1,4 +1,4 @@
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
 import { ClothingItem, categoryLabels } from '@/constants/mockData';
 import { colors, radius, spacing, typography } from '@/constants/theme';
 
@@ -19,7 +19,16 @@ export function ClothingListItem({ item, onPress }: ClothingListItemProps) {
   return (
     <Pressable onPress={onPress} style={({ pressed }) => [styles.row, pressed && styles.pressed]}>
       <View style={[styles.thumb, { backgroundColor: item.colorHex + '33' }]}>
-        <Text style={styles.emoji}>{item.emoji}</Text>
+        {item.imageUri ? (
+          <Image
+            source={{ uri: item.imageUri }}
+            style={styles.photo}
+            resizeMode="contain"
+            accessibilityLabel={item.name}
+          />
+        ) : (
+          <Text style={styles.emoji}>{item.emoji}</Text>
+        )}
       </View>
       <View style={styles.info}>
         <View style={styles.titleRow}>
@@ -61,6 +70,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+  photo: { width: '100%', height: '100%', borderRadius: radius.md },
   emoji: { fontSize: 28 },
   info: { flex: 1, gap: 2 },
   titleRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },

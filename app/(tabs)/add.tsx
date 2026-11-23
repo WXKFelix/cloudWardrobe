@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import * as ImagePicker from 'expo-image-picker';
+import { Image, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { ScreenContainer } from '@/components/ScreenContainer';
 import { Button } from '@/components/ui/Button';
@@ -11,7 +12,6 @@ import { colors, radius, spacing, typography } from '@/constants/theme';
 import { useAppStore } from '@/store/useAppStore';
 
 const categories: ClothingCategory[] = ['top', 'bottom', 'shoes', 'outerwear', 'accessory'];
-const emojis = ['👔', '👖', '👟', '🧥', '👜'];
 const colorOptions = [
   { name: '黑', hex: '#2C2C2C' },
   { name: '白', hex: '#F5F5F5' },
@@ -29,16 +29,41 @@ export default function AddScreen() {
   const [name, setName] = useState('');
   const [category, setCategory] = useState<ClothingCategory>('top');
   const [color, setColor] = useState(colorOptions[0]);
-  const [photoTaken, setPhotoTaken] = useState(false);
+  const [imageUri, setImageUri] = useState<string>();
+  const [photoError, setPhotoError] = useState('');
+  const [isPicking, setIsPicking] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
 
-  const handleTakePhoto = () => {
-    setPhotoTaken(true);
-    if (!name) setName('新录入衣物');
+  const pickPhoto = async (source: 'camera' | 'library') => {
+    setPhotoError('');
+    setIsPicking(true);
+
+    try {
+      if (source === 'camera') {
+        const permission = await ImagePicker.requestCameraPermissionsAsync();
+        if (!permission.granted) {
+          setPhotoError('请在系统设置中允许使用相机，或从相册选择照片。');
+          return;
+        }
+      }
+
+      const options: ImagePicker.ImagePickerOptions = { mediaTypes: ['images'], quality: 1 };
+      const result = source === 'camera'
+        ? await ImagePicker.launchCameraAsync(options)
+        : await ImagePicker.launchImageLibraryAsync(options);
+      if (!result.canceled) setImageUri(result.assets[0].uri);
+    } catch {
+      setPhotoError('无法打开照片，请重试。');
+    } finally {
+      setIsPicking(false);
+    }
   };
 
   const handleSave = () => {
-    if (!name.trim()) return;
+    const savedImageUri = mode === 'photo' ? imageUri : undefined;
+    if (mode === 'photo' && !savedImageUri) return;
+    const clothingName = name.trim() || (savedImageUri ? categoryLabels[category] : '');
+    if (!clothingName) return;
     const emojiMap: Record<ClothingCategory, string> = {
       top: '👔',
       bottom: '👖',
@@ -47,7 +72,8 @@ export default function AddScreen() {
       accessory: '👜',
     };
     addClothing({
-      name: name.trim(),
+      name: clothingName,
+      imageUri: savedImageUri,
       category,
       color: color.name,
       colorHex: color.hex,
@@ -57,7 +83,8 @@ export default function AddScreen() {
     });
     setShowSuccess(true);
     setName('');
-    setPhotoTaken(false);
+    setImageUri(undefined);
+    setPhotoError('');
   };
 
   const resetAndGoWardrobe = () => {
@@ -77,7 +104,7 @@ export default function AddScreen() {
           onPress={() => setMode('photo')}
           style={[styles.modeBtn, mode === 'photo' && styles.modeBtnActive]}
         >
-          <Text style={[styles.modeText, mode === 'photo' && styles.modeTextActive]}>📸 拍照录入</Text>
+          <Text style={[styles.modeText, mode === 'photo' && styles.modeTextActive]}>📸 照片录入</Text>
         </Pressable>
         <Pressable
           onPress={() => setMode('manual')}
@@ -89,26 +116,36 @@ export default function AddScreen() {
 
       {mode === 'photo' ? (
         <Card style={styles.photoCard}>
-          <Pressable onPress={handleTakePhoto} style={styles.photoArea}>
-            {photoTaken ? (
-              <>
-                <Text style={styles.photoEmoji}>👔</Text>
-                <Text style={styles.photoHint}>照片已拍摄（原型模拟）</Text>
-              </>
-            ) : (
-              <>
-                <Text style={styles.cameraIcon}>📷</Text>
-                <Text style={styles.photoHint}>点击模拟拍照</Text>
-              </>
-            )}
-          </Pressable>
-          {photoTaken ? (
-            <Text style={styles.aiHint}>✨ AI 已识别：上衣 · 蓝色（原型模拟）</Text>
-          ) : null}
+          {imageUri ? (
+            <Image source={{ uri: imageUri }} style={styles.photo} resizeMode="contain" accessibilityLabel="衣物照片预览" />
+          ) : (
+            <View style={styles.photoArea}>
+              <Text style={styles.cameraIcon}>📷</Text>
+              <Text style={styles.photoHint}>平铺衣物，拍下完整正面</Text>
+            </View>
+          )}
+          <View style={styles.photoActions}>
+            <Button
+              title={imageUri ? '更换照片' : Platform.OS === 'web' ? '选择照片' : '从相册选择'}
+              onPress={() => void pickPhoto('library')}
+              disabled={isPicking}
+              variant="outline"
+              style={styles.photoButton}
+            />
+            {Platform.OS !== 'web' ? (
+              <Button
+                title={imageUri ? '重拍' : '拍照'}
+                onPress={() => void pickPhoto('camera')}
+                disabled={isPicking}
+                style={styles.photoButton}
+              />
+            ) : null}
+          </View>
+          {photoError ? <Text accessibilityLiveRegion="polite" style={styles.photoError}>{photoError}</Text> : null}
         </Card>
       ) : null}
 
-      <Input label="衣物名称" value={name} onChangeText={setName} placeholder="例如：蓝色条纹衬衫" />
+      <Input label={mode === 'photo' ? '衣物名称（选填）' : '衣物名称'} value={name} onChangeText={setName} placeholder="例如：蓝色条纹衬衫" />
 
       <Text style={styles.fieldLabel}>类别</Text>
       <View style={styles.chips}>
@@ -139,12 +176,17 @@ export default function AddScreen() {
         ))}
       </View>
 
-      <Button title="保存到云衣橱" onPress={handleSave} style={{ marginTop: spacing.lg }} />
+      <Button
+        title="保存到衣橱"
+        onPress={handleSave}
+        disabled={isPicking || (mode === 'photo' ? !imageUri : !name.trim())}
+        style={{ marginTop: spacing.lg }}
+      />
 
       <ModalSheet
         visible={showSuccess}
         title="✅ 录入成功"
-        message="衣物已保存到云端衣橱，1 秒内完成（原型模拟）"
+        message="衣物已添加到本次会话的衣橱。"
         primaryAction={{ label: '查看衣橱', onPress: resetAndGoWardrobe }}
         secondaryAction={{
           label: '继续录入',
@@ -184,9 +226,11 @@ const styles = StyleSheet.create({
     borderStyle: 'dashed',
   },
   cameraIcon: { fontSize: 40 },
-  photoEmoji: { fontSize: 56 },
+  photo: { width: '100%', height: 240, backgroundColor: colors.surfaceMuted, borderRadius: radius.md },
+  photoActions: { flexDirection: 'row', gap: spacing.sm, marginTop: spacing.sm },
+  photoButton: { flex: 1 },
   photoHint: { ...typography.body, color: colors.textSecondary, marginTop: spacing.sm },
-  aiHint: { ...typography.caption, color: colors.primary, marginTop: spacing.sm },
+  photoError: { ...typography.caption, color: colors.text, marginTop: spacing.sm },
   fieldLabel: { ...typography.label, color: colors.text, marginTop: spacing.md, marginBottom: spacing.sm },
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },
   chip: {

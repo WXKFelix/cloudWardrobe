@@ -3,6 +3,7 @@ export type UserType = 'student' | 'worker' | 'family';
 export type ClothingCategory = 'top' | 'bottom' | 'shoes' | 'outerwear' | 'accessory';
 
 export interface ClothingItem {
+  imageUri?: string;
   id: string;
   name: string;
   category: ClothingCategory;

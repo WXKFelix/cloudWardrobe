@@ -43,7 +43,14 @@
     },
     "plugins": [
       "expo-asset",
-      "expo-font"
+      "expo-font",
+      [
+        "expo-image-picker",
+        {
+          "cameraPermission": "允许云衣柜使用相机拍摄衣物照片。",
+          "microphonePermission": false
+        }
+      ]
     ]
   }
 }

@@ -1,4 +1,4 @@
-import { StyleSheet, Text, View } from 'react-native';
+import { Image, StyleSheet, Text, View } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { ScreenContainer } from '@/components/ScreenContainer';
 import { ScreenHeader } from '@/components/ScreenHeader';
@@ -43,8 +43,17 @@ export default function ClothingDetailScreen() {
     <ScreenContainer>
       <ScreenHeader title="衣物详情" onBack={() => router.back()} />
 
-      <View style={[styles.hero, { backgroundColor: item.colorHex + '33' }]}>
-        <Text style={styles.emoji}>{item.emoji}</Text>
+      <View style={[styles.hero, item.imageUri && styles.photoHero, { backgroundColor: item.colorHex + '33' }]}>
+        {item.imageUri ? (
+          <Image
+            source={{ uri: item.imageUri }}
+            style={styles.photo}
+            resizeMode="contain"
+            accessibilityLabel={item.name}
+          />
+        ) : (
+          <Text style={styles.emoji}>{item.emoji}</Text>
+        )}
       </View>
       <Text style={styles.name}>{item.name}</Text>
 
@@ -76,6 +85,8 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     marginBottom: spacing.md,
   },
+  photoHero: { height: 280 },
+  photo: { width: '100%', height: '100%', borderRadius: radius.xl },
   emoji: { fontSize: 80 },
   name: { ...typography.subtitle, color: colors.text, marginBottom: spacing.md },
   infoCard: { gap: spacing.sm, marginBottom: spacing.lg },
