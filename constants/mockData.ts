@@ -4,6 +4,7 @@ export type ClothingCategory = 'top' | 'bottom' | 'shoes' | 'outerwear' | 'acces
 
 export interface ClothingItem {
   imageUri?: string;
+  tryOnImageUri?: string;
   id: string;
   name: string;
   category: ClothingCategory;

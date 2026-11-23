@@ -4,6 +4,7 @@
   "private": true,
   "description": "CloudWardrobe backend — NestJS + Prisma + PostgreSQL",
   "scripts": {
+    "try-on": "tsx --env-file-if-exists=.env src/try-on.ts",
     "db:generate": "prisma generate",
     "db:migrate": "prisma migrate deploy",
     "db:migrate:dev": "prisma migrate dev",

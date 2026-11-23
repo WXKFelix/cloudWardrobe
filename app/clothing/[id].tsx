@@ -1,5 +1,6 @@
 import { Image, StyleSheet, Text, View } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
+import { ClothingTryOn } from '@/components/ClothingTryOn';
 import { ScreenContainer } from '@/components/ScreenContainer';
 import { ScreenHeader } from '@/components/ScreenHeader';
 import { Button } from '@/components/ui/Button';
@@ -65,6 +66,10 @@ export default function ClothingDetailScreen() {
           </View>
         ))}
       </Card>
+
+      {item.category === 'top' && item.imageUri ? (
+        <ClothingTryOn key={item.id} garmentImage={item.tryOnImageUri ?? item.imageUri} />
+      ) : null}
 
       <View style={styles.actions}>
         <Button title="标记待清洗" onPress={() => {}} variant="outline" />

@@ -29,7 +29,8 @@ export default function AddScreen() {
   const [name, setName] = useState('');
   const [category, setCategory] = useState<ClothingCategory>('top');
   const [color, setColor] = useState(colorOptions[0]);
-  const [imageUri, setImageUri] = useState<string>();
+  const [photo, setPhoto] = useState<ImagePicker.ImagePickerAsset>();
+  const imageUri = photo?.uri;
   const [photoError, setPhotoError] = useState('');
   const [isPicking, setIsPicking] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
@@ -47,11 +48,11 @@ export default function AddScreen() {
         }
       }
 
-      const options: ImagePicker.ImagePickerOptions = { mediaTypes: ['images'], quality: 1 };
+      const options: ImagePicker.ImagePickerOptions = { mediaTypes: ['images'], quality: 1, base64: Platform.OS !== 'web' };
       const result = source === 'camera'
         ? await ImagePicker.launchCameraAsync(options)
         : await ImagePicker.launchImageLibraryAsync(options);
-      if (!result.canceled) setImageUri(result.assets[0].uri);
+      if (!result.canceled) setPhoto(result.assets[0]);
     } catch {
       setPhotoError('无法打开照片，请重试。');
     } finally {
@@ -74,6 +75,7 @@ export default function AddScreen() {
     addClothing({
       name: clothingName,
       imageUri: savedImageUri,
+      tryOnImageUri: savedImageUri && photo?.base64 ? `data:image/jpeg;base64,${photo.base64}` : undefined,
       category,
       color: color.name,
       colorHex: color.hex,
@@ -83,7 +85,7 @@ export default function AddScreen() {
     });
     setShowSuccess(true);
     setName('');
-    setImageUri(undefined);
+    setPhoto(undefined);
     setPhotoError('');
   };
 
