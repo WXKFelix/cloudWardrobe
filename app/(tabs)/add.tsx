@@ -40,7 +40,8 @@ export default function AddScreen() {
     setIsPicking(true);
 
     try {
-      if (source === 'camera') {
+      // Web capture must open directly from the user's click.
+      if (source === 'camera' && Platform.OS !== 'web') {
         const permission = await ImagePicker.requestCameraPermissionsAsync();
         if (!permission.granted) {
           setPhotoError('请在系统设置中允许使用相机，或从相册选择照片。');
@@ -54,7 +55,9 @@ export default function AddScreen() {
         : await ImagePicker.launchImageLibraryAsync(options);
       if (!result.canceled) setPhoto(result.assets[0]);
     } catch {
-      setPhotoError('无法打开照片，请重试。');
+      setPhotoError(source === 'camera'
+        ? '无法打开相机。请检查相机权限，或从相册选择照片。'
+        : '无法打开相册，请重试。');
     } finally {
       setIsPicking(false);
     }
@@ -121,22 +124,28 @@ export default function AddScreen() {
           {imageUri ? (
             <Image source={{ uri: imageUri }} style={styles.photo} resizeMode="contain" accessibilityLabel="衣物照片预览" />
           ) : (
-            <View style={styles.photoArea}>
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="拍摄衣物照片"
+              disabled={isPicking}
+              onPress={() => void pickPhoto('camera')}
+              style={styles.photoArea}
+            >
               <Text style={styles.cameraIcon}>📷</Text>
-              <Text style={styles.photoHint}>平铺衣物，拍下完整正面</Text>
-            </View>
+              <Text style={styles.photoHint}>点击拍照，拍下衣物完整正面</Text>
+            </Pressable>
           )}
           <View style={styles.photoActions}>
             <Button
-              title={imageUri ? '更换照片' : Platform.OS === 'web' ? '选择照片' : '从相册选择'}
+              title={imageUri ? '从相册更换' : '从相册选择'}
               onPress={() => void pickPhoto('library')}
               disabled={isPicking}
               variant="outline"
               style={styles.photoButton}
             />
-            {Platform.OS !== 'web' ? (
+            {imageUri ? (
               <Button
-                title={imageUri ? '重拍' : '拍照'}
+                title="重拍"
                 onPress={() => void pickPhoto('camera')}
                 disabled={isPicking}
                 style={styles.photoButton}
